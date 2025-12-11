@@ -15,6 +15,10 @@ func Add(path string) error {
 	}
 
 	err = filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+		if info.IsDir() && info.Name() == ".ship" {
+			return filepath.SkipDir
+		}
+
 		if err != nil {
 			return err
 		}
@@ -29,7 +33,6 @@ func Add(path string) error {
 		}
 
 		hash := utils.HashBytes(data)
-
 		if !utils.ObjectExists(hash) {
 			if err := utils.StoreObject(hash, data); err != nil {
 				return err
