@@ -8,14 +8,12 @@ import (
 )
 
 func LoadIndex() (*entities.Index, error) {
-	path := ".ship/index"
-
-	// This check if this path exists or not.
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	ok, err := ShipHasBeenInit()
+	if !ok {
 		return nil, err
 	}
 
-	bytes, err := os.ReadFile(path)
+	bytes, err := os.ReadFile(BASE_INDEX_PATH)
 	if err != nil {
 		return nil, err
 	}

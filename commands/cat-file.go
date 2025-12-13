@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	utils "github.com/KambojRajan/ship/Core/Utils"
+	"github.com/KambojRajan/ship/Core/utils"
 )
 
 func CateFile(hash string) error {
@@ -66,4 +66,6 @@ func CateFile(hash string) error {
 	default:
 		return fmt.Errorf(utils.UNKNOWN_TYPE_ERROR, objectType)
 	}
+
+	return nil
 }

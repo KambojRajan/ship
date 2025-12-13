@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	utils "github.com/KambojRajan/ship/Core/Utils"
+	"github.com/KambojRajan/ship/Core/utils"
 )
 
 func Init(path string) error {

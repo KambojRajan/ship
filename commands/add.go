@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	entities "github.com/KambojRajan/ship/Core/Entities"
-	utils "github.com/KambojRajan/ship/Core/Utils"
+	"github.com/KambojRajan/ship/Core/utils"
 )
 
 func Add(path string) error {
