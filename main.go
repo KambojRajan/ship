@@ -24,20 +24,29 @@ func main() {
 
 		path := os.Args[2]
 		fmt.Printf("calling add with path %v", path)
-		commands.Add(path)
+		err := commands.Add(path)
+		if err != nil {
+			return
+		}
 	case "init":
 		if len(os.Args) < 3 {
 			fmt.Println("usage: ship init <path>")
 			return
 		}
 		path := os.Args[2]
-		commands.Init(path)
+		err := commands.Init(path)
+		if err != nil {
+			return
+		}
 	case "cat-file":
 		if len(os.Args) < 3 {
 			fmt.Println("usage: ship cat-file <hash>")
 			return
 		}
 		hash := os.Args[2]
-		commands.CateFile(hash)
+		err := commands.CateFile(hash)
+		if err != nil {
+			return
+		}
 	}
 }
