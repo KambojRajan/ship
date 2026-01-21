@@ -29,5 +29,5 @@ func LoadIndex() (*entities.Index, error) {
 
 func SaveIndex(index *entities.Index) error {
 	b, _ := json.Marshal(index)
-	return os.WriteFile(".ship/index", b, 0644)
+	return os.WriteFile(BASE_INDEX_PATH, b, 0644)
 }

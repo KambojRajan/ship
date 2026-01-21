@@ -2,11 +2,8 @@ package utils
 
 import (
 	"crypto/sha1"
-	"fmt"
 )
 
-func HashBytes(data []byte) string {
-	h := sha1.Sum(data)
-
-	return fmt.Sprintf("%x", h[:])
+func HashBytes(data []byte) [20]byte {
+	return sha1.Sum(data)
 }

@@ -1,8 +1,9 @@
 package entities
 
 type IndexEntry struct {
-	Path     string
-	BlobHash string
+	Path string
+	Hash [20]byte
+	Mode uint32
 }
 
 type Index struct {

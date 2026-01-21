@@ -15,7 +15,7 @@ func Add(path string) error {
 	}
 
 	err = filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-		if info.IsDir() && info.Name() == ".ship" {
+		if info.IsDir() && info.Name() == utils.BASE_SHIP_DIR {
 			return filepath.SkipDir
 		}
 
@@ -44,9 +44,11 @@ func Add(path string) error {
 			return err
 		}
 
+		mode := utils.GetMode(info)
 		index.Entries[rel] = entities.IndexEntry{
-			Path:     rel,
-			BlobHash: hash,
+			Path: rel,
+			Hash: hash,
+			Mode: mode,
 		}
 
 		return nil
