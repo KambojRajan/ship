@@ -11,7 +11,7 @@ func ShipHasBeenInit() (bool, error) {
 		return false, err
 	}
 
-	path := fmt.Sprintf("%s/%s", currentRoot, BASE_SHIP_DIR)
+	path := fmt.Sprintf("%s/%s", currentRoot, BaseShipDir)
 
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {

@@ -16,7 +16,7 @@ func Add(path string) error {
 	}
 
 	err = filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-		if info.IsDir() && info.Name() == utils.BASE_SHIP_DIR {
+		if info.IsDir() && info.Name() == utils.BaseShipDir {
 			return filepath.SkipDir
 		}
 

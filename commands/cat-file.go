@@ -19,7 +19,7 @@ func CateFile(hash string) error {
 		return err
 	}
 
-	path := fmt.Sprintf(utils.BASE_OBJECT_DIR+"/%v/%v", folder, file)
+	path := fmt.Sprintf(utils.BaseObjectDir+"/%v/%v", folder, file)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return err
 	}
@@ -64,7 +64,7 @@ func CateFile(hash string) error {
 	case utils.TREE:
 		return fmt.Errorf("to be impl")
 	default:
-		return fmt.Errorf(utils.UNKNOWN_TYPE_ERROR, objectType)
+		return fmt.Errorf(utils.UnknownTypeError, objectType)
 	}
 
 	return nil

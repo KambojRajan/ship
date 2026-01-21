@@ -27,7 +27,7 @@ func Init(path string) error {
 	shipDir := filepath.Join(root, ".ship")
 
 	if _, err = os.ReadFile(shipDir); !os.IsNotExist(err) {
-		return fmt.Errorf(utils.REPO_ALREADY_EXISTS, shipDir)
+		return fmt.Errorf(utils.RepoAlreadyExists, shipDir)
 	}
 
 	if err := os.MkdirAll(filepath.Join(shipDir, "objects"), 0755); err != nil {
