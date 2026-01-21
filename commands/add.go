@@ -5,11 +5,12 @@ import (
 	"path/filepath"
 
 	entities "github.com/KambojRajan/ship/Core/Entities"
+	"github.com/KambojRajan/ship/Core/common"
 	"github.com/KambojRajan/ship/Core/utils"
 )
 
 func Add(path string) error {
-	index, err := utils.LoadIndex()
+	index, err := entities.LoadIndex()
 	if err != nil {
 		return err
 	}
@@ -45,7 +46,7 @@ func Add(path string) error {
 		}
 
 		mode := utils.GetMode(info)
-		index.Entries[rel] = entities.IndexEntry{
+		index.Entries[rel] = common.IndexEntry{
 			Path: rel,
 			Hash: hash,
 			Mode: mode,
@@ -58,7 +59,7 @@ func Add(path string) error {
 		return err
 	}
 
-	if err = utils.SaveIndex(index); err != nil {
+	if err = entities.SaveIndex(index); err != nil {
 		return err
 	}
 

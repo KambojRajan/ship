@@ -1,11 +1,38 @@
 package entities
 
-type IndexEntry struct {
-	Path string
-	Hash [20]byte
-	Mode uint32
-}
+import (
+	"encoding/json"
+	"os"
+
+	"github.com/KambojRajan/ship/Core/common"
+	"github.com/KambojRajan/ship/Core/utils"
+)
 
 type Index struct {
-	Entries map[string]IndexEntry
+	Entries map[string]common.IndexEntry
+}
+
+func LoadIndex() (*Index, error) {
+	ok, err := utils.ShipHasBeenInit()
+	if !ok {
+		return nil, err
+	}
+
+	bytes, err := os.ReadFile(utils.BASE_INDEX_PATH)
+	if err != nil {
+		return nil, err
+	}
+
+	index := Index{}
+	err = json.Unmarshal(bytes, &index)
+	if err != nil {
+		return nil, err
+	}
+
+	return &index, nil
+}
+
+func SaveIndex(index *Index) error {
+	b, _ := json.Marshal(index)
+	return os.WriteFile(utils.BASE_INDEX_PATH, b, 0644)
 }
