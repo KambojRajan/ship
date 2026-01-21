@@ -11,3 +11,10 @@ type TempDirNode struct {
 	Dirs  map[string]*TempDirNode
 	Hash  [20]byte
 }
+
+func NewTempDirTree() *TempDirNode {
+	return &TempDirNode{
+		Files: make(map[string]IndexEntry),
+		Dirs:  make(map[string]*TempDirNode),
+	}
+}

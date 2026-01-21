@@ -17,3 +17,7 @@ const (
 	COMMIT = "commit"
 	TREE   = "tree"
 )
+
+const (
+	SEPARATOR = "/"
+)
