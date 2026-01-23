@@ -29,7 +29,7 @@ func HashObject(data []byte, objectType common.ObjectType, write bool) ([20]byte
 	folder := hash[0:2]
 	file := hash[2:]
 
-	objectDir := filepath.Join(BaseObjectDir, folder)
+	objectDir := filepath.Join(RootObjectDir, folder)
 	if err := os.MkdirAll(objectDir, 0755); err != nil {
 		return h, err
 	}

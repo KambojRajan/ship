@@ -9,38 +9,55 @@ import (
 )
 
 func Init(path string) error {
-	var root string
-	var err error
-
-	if path == "" {
-		root, err = os.Getwd()
+	if path == "" || path == "." {
+		var err error
+		path, err = os.Getwd()
 		if err != nil {
-			return err
-		}
-	} else {
-		root, err = filepath.Abs(path)
-		if err != nil {
-			return err
+			return fmt.Errorf(utils.ErrFailedToGetWorkingDir, err)
 		}
 	}
 
-	shipDir := filepath.Join(root, ".ship")
-
-	if _, err = os.ReadFile(shipDir); !os.IsNotExist(err) {
-		return fmt.Errorf(utils.RepoAlreadyExists, shipDir)
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf(utils.ErrFailedToAccessPath, err)
 	}
 
-	if err := os.MkdirAll(filepath.Join(shipDir, "objects"), 0755); err != nil {
-		return err
+	if !info.IsDir() {
+		return fmt.Errorf(utils.ErrPathNotDirectory, path)
 	}
 
-	if err := os.WriteFile(filepath.Join(shipDir, "index"), []byte(`{"entries":{}}`), 0644); err != nil {
-		return err
+	shipDir := filepath.Join(path, utils.RootShipDir)
+	objectDir := filepath.Join(path, utils.RootObjectDir)
+	refsHeadsDir := filepath.Join(path, utils.RootShipDir, "refs", "heads")
+	refsTagsDir := filepath.Join(path, utils.RootShipDir, "refs", "tags")
+	indexPath := filepath.Join(path, utils.RootIndexPath)
+	headPath := filepath.Join(path, utils.RootHEADPath)
+
+	if _, err := os.Stat(shipDir); err == nil {
+		fmt.Println("Reinitialized existing Ship repository")
+		return nil
 	}
 
-	if err := os.WriteFile(filepath.Join(shipDir, "HEAD"), []byte("ref: refs/heads/main\n"), 0644); err != nil {
-		return err
+	if err := os.MkdirAll(objectDir, 0755); err != nil {
+		return fmt.Errorf(utils.ErrFailedToCreateObjectsDir, err)
 	}
 
+	if err := os.MkdirAll(refsHeadsDir, 0755); err != nil {
+		return fmt.Errorf(utils.ErrFailedToCreateRefsHeadsDir, err)
+	}
+
+	if err := os.MkdirAll(refsTagsDir, 0755); err != nil {
+		return fmt.Errorf(utils.ErrFailedToCreateRefsTagsDir, err)
+	}
+
+	if err := os.WriteFile(indexPath, []byte(`{"entries":{}}`), 0644); err != nil {
+		return fmt.Errorf(utils.ErrFailedToCreateIndexFile, err)
+	}
+
+	if err := os.WriteFile(headPath, []byte("ref: refs/heads/main\n"), 0644); err != nil {
+		return fmt.Errorf(utils.ErrFailedToCreateHEADFile, err)
+	}
+
+	fmt.Printf("Initialized empty Ship repository in %s\n", shipDir)
 	return nil
 }

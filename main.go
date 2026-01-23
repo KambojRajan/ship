@@ -23,7 +23,6 @@ func main() {
 		}
 
 		path := os.Args[2]
-		fmt.Printf("calling add with path %v", path)
 		err := commands.Add(path)
 		if err != nil {
 			return

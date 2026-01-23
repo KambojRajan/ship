@@ -18,7 +18,7 @@ func LoadIndex() (*Index, error) {
 		return nil, err
 	}
 
-	bytes, err := os.ReadFile(utils.BaseIndexPath)
+	bytes, err := os.ReadFile(utils.RootIndexPath)
 	if err != nil {
 		return nil, err
 	}
@@ -34,5 +34,5 @@ func LoadIndex() (*Index, error) {
 
 func SaveIndex(index *Index) error {
 	b, _ := json.Marshal(index)
-	return os.WriteFile(utils.BaseIndexPath, b, 0644)
+	return os.WriteFile(utils.RootIndexPath, b, 0644)
 }

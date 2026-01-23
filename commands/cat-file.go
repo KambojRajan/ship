@@ -19,7 +19,7 @@ func CateFile(hash string) error {
 		return err
 	}
 
-	path := fmt.Sprintf(utils.BaseObjectDir+"/%v/%v", folder, file)
+	path := fmt.Sprintf(utils.RootObjectDir+"/%v/%v", folder, file)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return err
 	}
@@ -34,7 +34,12 @@ func CateFile(hash string) error {
 		return err
 	}
 
-	defer zr.Close()
+	defer func(zr io.ReadCloser) {
+		err := zr.Close()
+		if err != nil {
+
+		}
+	}(zr)
 
 	decompressed, err := io.ReadAll(zr)
 	if err != nil {
@@ -43,18 +48,18 @@ func CateFile(hash string) error {
 
 	parts := bytes.SplitN(decompressed, []byte{0}, 2)
 	if len(parts) != 2 {
-		return fmt.Errorf("Invalid Object Format")
+		return fmt.Errorf(utils.ErrInvalidObjectFormat)
 	}
 
 	header := string(parts[0])
 	body := parts[1]
 
-	headerFilds := strings.Split(header, " ")
-	if len(headerFilds) != 2 {
-		return fmt.Errorf("Invalid Object Header")
+	headerFields := strings.Split(header, " ")
+	if len(headerFields) != 2 {
+		return fmt.Errorf(utils.ErrInvalidObjectHeader)
 	}
 
-	objectType := headerFilds[0]
+	objectType := headerFields[0]
 
 	switch objectType {
 	case utils.BLOB:
@@ -62,9 +67,9 @@ func CateFile(hash string) error {
 	case utils.COMMIT:
 		fmt.Print(string(body))
 	case utils.TREE:
-		return fmt.Errorf("to be impl")
+		return fmt.Errorf(utils.ErrTreeNotImplemented)
 	default:
-		return fmt.Errorf(utils.UnknownTypeError, objectType)
+		return fmt.Errorf(utils.ErrUnknownType, objectType)
 	}
 
 	return nil

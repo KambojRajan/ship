@@ -1,14 +1,14 @@
 package utils
 
 const (
-	RepoAlreadyExists = "ship repository already exists at %s"
-	UnknownTypeError  = "Unknown type %s"
+	UnknownTypeError = "Unknown type %s"
 )
 
 const (
-	BaseShipDir   = ".ship"
-	BaseObjectDir = ".ship/objects"
-	BaseIndexPath = "./ship/index"
+	RootShipDir   = ".ship"
+	RootObjectDir = ".ship/objects"
+	RootIndexPath = ".ship/index"
+	RootHEADPath  = ".ship/HEAD"
 )
 
 const (
