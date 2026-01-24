@@ -1,54 +1,291 @@
 package command_tests
 
 import (
-	"os"
 	"testing"
 
-	"github.com/KambojRajan/ship/Core/utils"
+	entities "github.com/KambojRajan/ship/Core/Entities"
 	"github.com/KambojRajan/ship/commands"
 	"github.com/KambojRajan/ship/tests/helpers"
 )
 
-func TestInit_forCurrentDir_itShouldCreateBasicDirStructure(t *testing.T) {
-	dir := t.TempDir()
-	err := os.Chdir(dir)
-	if err != nil {
-		return
+func TestAdd_ToEmptyInitDir_ShouldPass(t *testing.T) {
+	info := helpers.Setup(t)
+
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.BurnDown(t)
+}
+
+func TestAddTwice_ToInitDir_ShouldPass(t *testing.T) {
+	info := helpers.Setup(t)
+
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.BurnDown(t)
+}
+
+func TestAdd_ToUninitializedDir_ShouldFail(t *testing.T) {
+	info := helpers.Setup(t)
+	err := commands.Add(info.RepoDir)
+	helpers.AssertNotNil(err)
+	helpers.BurnDown(t)
+}
+
+func TestAdd_WithNoFiles_ShouldPass(t *testing.T) {
+	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	// Add with no files present (only .ship dir)
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	index, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+	helpers.AssertEqual(t, len(index.Entries), 0)
+	helpers.BurnDown(t)
+}
+
+func TestAdd_WithNestedDirectories_ShouldPass(t *testing.T) {
+	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	dirs := []string{"dir1", "dir2/subdir1", "dir2/subdir2", "a/b/c/d/e/f/g/h"}
+	for _, name := range dirs {
+		helpers.WriteDir(t, info.RepoDir, name)
 	}
 
-	err = commands.Init(".")
-	if err != nil {
-		t.Error(err)
+	files := []string{
+		"file1.txt",
+		"dir2/file2.txt",
+		"dir2/subdir1/file3.txt",
+		"dir1/file4.txt",
+		"a/b/c/d/e/f/g/h/deep.txt",
+	}
+	for _, name := range files {
+		helpers.WriteFile(t, info.RepoDir, name, []byte("content for "+name))
 	}
 
-	helpers.AssertExists(t, utils.RootShipDir)
-	helpers.AssertExists(t, utils.RootIndexPath)
-	helpers.AssertExists(t, utils.RootObjectDir)
-	helpers.AssertExists(t, utils.RootHEADPath)
-}
-
-func TestInit_forExistingDir_initShouldBeIdempotent(t *testing.T) {
-	dir := t.TempDir()
-
-	err := commands.Init(dir)
+	err = commands.Add(info.RepoDir)
 	helpers.AssertNil(err)
 
-	err = commands.Init(dir)
-	helpers.AssertNil(err)
+	for _, name := range files {
+		helpers.AssertFileInIndex(t, info.RepoDir, name)
+	}
+
+	helpers.BurnDown(t)
 }
 
-func TestInit_forNonExistingDir_itShouldFail(t *testing.T) {
-	err := commands.Init("pata")
+func TestAdd_WithMixedContent_ShouldAddAll(t *testing.T) {
+	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.WriteFile(t, info.RepoDir, "text.txt", []byte("text content"))
+	helpers.WriteFile(t, info.RepoDir, "binary.bin", []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A})
+	helpers.WriteFile(t, info.RepoDir, "empty.txt", []byte(""))
+	helpers.WriteFile(t, info.RepoDir, "large.dat", make([]byte, 1024*1024))
+	helpers.WriteFile(t, info.RepoDir, "script.sh", []byte("#!/bin/bash\necho test"))
+	helpers.WriteFile(t, info.RepoDir, "file1.txt", []byte("file 1"))
+	helpers.WriteFile(t, info.RepoDir, "file2.txt", []byte("file 2"))
+
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	files := []string{"text.txt", "binary.bin", "empty.txt", "large.dat", "script.sh", "file1.txt", "file2.txt"}
+	for _, name := range files {
+		helpers.AssertFileInIndex(t, info.RepoDir, name)
+	}
+
+	helpers.BurnDown(t)
+}
+
+func TestAdd_WithSpecialFilenames_ShouldPass(t *testing.T) {
+	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	filenames := []string{
+		"file-with-dash.txt",
+		"file_with_underscore.txt",
+		"file.multiple.dots.txt",
+		"file with spaces.txt",
+		"another file.txt",
+		".gitignore",
+		".env",
+		".editorconfig",
+		"😀emoji.txt",
+		"this_is_a_very_long_filename_that_tests_the_limits_of_what_can_be_handled_by_the_system_abcdefghijklmnopqrstuvwxyz_0123456789_repeated_many_times.txt",
+	}
+
+	for _, name := range filenames {
+		helpers.WriteFile(t, info.RepoDir, name, []byte("content"))
+	}
+
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	for _, name := range filenames {
+		helpers.AssertFileInIndex(t, info.RepoDir, name)
+	}
+
+	helpers.BurnDown(t)
+}
+
+func TestAdd_WithModifiedFile_ShouldUpdateIndex(t *testing.T) {
+	info := helpers.Setup(t)
+
+	dirs := []string{"dir1", "dir2/subdir1"}
+	for _, name := range dirs {
+		helpers.WriteDir(t, info.RepoDir, name)
+	}
+
+	files := []string{"file1.txt", "dir2/file2.txt", "dir1/file3.txt"}
+	for _, name := range files {
+		helpers.WriteFile(t, info.RepoDir, name, []byte("content for "+name))
+	}
+
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	initialIndex, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+	initialHash := initialIndex.Entries["file1.txt"].Hash
+
+	helpers.WriteFile(t, info.RepoDir, "file1.txt", []byte("modified content"))
+
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	finalIndex, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+	finalHash := finalIndex.Entries["file1.txt"].Hash
+
+	helpers.AssertNotEqualIndex(t, initialIndex, finalIndex)
+
+	if initialHash == finalHash {
+		t.Fatalf("expected hash to change after modification")
+	}
+
+	helpers.BurnDown(t)
+}
+
+func TestAdd_WithDeletedFile_ShouldHandle(t *testing.T) {
+	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.WriteFile(t, info.RepoDir, "file1.txt", []byte("content for file1.txt"))
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+	helpers.AssertFileInIndex(t, info.RepoDir, "file1.txt")
+
+	helpers.DeleteFile(t, info.RepoDir, "file1.txt")
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	index, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+	_, exists := index.Entries["file1.txt"]
+	helpers.AssertEqual(t, exists, false)
+
+	helpers.BurnDown(t)
+}
+
+func TestAdd_WithIdenticalContent_ShouldReuseObject(t *testing.T) {
+	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	// Create two files with identical content
+	content := []byte("identical content")
+	helpers.WriteFile(t, info.RepoDir, "file1.txt", content)
+	helpers.WriteFile(t, info.RepoDir, "file2.txt", content)
+
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	index, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.AssertFileInIndex(t, info.RepoDir, "file1.txt")
+	helpers.AssertFileInIndex(t, info.RepoDir, "file2.txt")
+
+	hash1 := index.Entries["file1.txt"].Hash
+	hash2 := index.Entries["file2.txt"].Hash
+
+	if hash1 != hash2 {
+		t.Fatalf("expected identical content to have same hash, got %v and %v", hash1, hash2)
+	}
+
+	helpers.BurnDown(t)
+}
+
+func TestAdd_SkipsShipDirectory_ShouldPass(t *testing.T) {
+	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.WriteFile(t, info.RepoDir, "file1.txt", []byte("content"))
+
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	index, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+
+	for path := range index.Entries {
+		if len(path) >= 5 && path[:5] == ".ship" {
+			t.Fatalf("expected .ship directory to be skipped, but found entry: %s", path)
+		}
+	}
+
+	helpers.BurnDown(t)
+}
+
+func TestAdd_AfterIndexCorruption_ShouldHandle(t *testing.T) {
+	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.WriteFile(t, info.RepoDir, "file1.txt", []byte("content"))
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.WriteFile(t, info.RepoDir, ".ship/index", []byte("corrupted data"))
+
+	err = commands.Add(info.RepoDir)
 	helpers.AssertNotNil(err)
+
+	helpers.BurnDown(t)
 }
 
-func TestInit_passingNonDirPath_itShouldFail(t *testing.T) {
-	err := commands.Init("mx.md")
-	helpers.AssertNotNil(err)
-}
-
-func TestInit_forEmptyDir_itShouldPass(t *testing.T) {
-	dir := t.TempDir()
-	err := commands.Init(dir)
+func TestAdd_WithRegularFileMode_ShouldPass(t *testing.T) {
+	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
 	helpers.AssertNil(err)
+
+	helpers.WriteFile(t, info.RepoDir, "regular.txt", []byte("regular file"))
+
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	index, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.AssertFileInIndex(t, info.RepoDir, "regular.txt")
+	helpers.AssertEqual(t, index.Entries["regular.txt"].Mode, uint32(100644))
+
+	helpers.BurnDown(t)
 }

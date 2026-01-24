@@ -1,23 +1,18 @@
 package utils
 
 import (
-	"fmt"
 	"os"
+	"path/filepath"
 )
 
-func ShipHasBeenInit() (bool, error) {
-	currentRoot, err := os.Getwd()
-	if err != nil {
-		return false, err
-	}
-
-	path := fmt.Sprintf("%s/%s", currentRoot, RootShipDir)
+func ShipHasBeenInit(currentPath string) (bool, error) {
+	path := filepath.Join(currentPath, RootShipDir)
 
 	info, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return false, nil
-	}
 	if err != nil {
+		if os.IsNotExist(err) {
+			return false, err
+		}
 		return false, err
 	}
 

@@ -15,10 +15,6 @@ func CateFile(hash string) error {
 	folder := hash[0:2]
 	file := hash[2:]
 
-	if shipInitDone, err := utils.ShipHasBeenInit(); !shipInitDone {
-		return err
-	}
-
 	path := fmt.Sprintf(utils.RootObjectDir+"/%v/%v", folder, file)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return err

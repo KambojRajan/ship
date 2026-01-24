@@ -3,6 +3,7 @@ package entities
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 
 	"github.com/KambojRajan/ship/Core/common"
 	"github.com/KambojRajan/ship/Core/utils"
@@ -12,13 +13,23 @@ type Index struct {
 	Entries map[string]common.IndexEntry
 }
 
-func LoadIndex() (*Index, error) {
-	ok, err := utils.ShipHasBeenInit()
+func (i Index) Equal(expected *Index) bool {
+	flag := len(i.Entries) == len(expected.Entries)
+	for k, v := range i.Entries {
+		flag = flag && expected.Entries[k].Equal(v)
+	}
+	return flag
+}
+
+func LoadIndex(currentPath string) (*Index, error) {
+	ok, err := utils.ShipHasBeenInit(currentPath)
 	if !ok {
 		return nil, err
 	}
 
-	bytes, err := os.ReadFile(utils.RootIndexPath)
+	indexPath := filepath.Join(currentPath, utils.RootIndexPath)
+
+	bytes, err := os.ReadFile(indexPath)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +43,8 @@ func LoadIndex() (*Index, error) {
 	return &index, nil
 }
 
-func SaveIndex(index *Index) error {
+func SaveIndex(path string, index *Index) error {
 	b, _ := json.Marshal(index)
-	return os.WriteFile(utils.RootIndexPath, b, 0644)
+	path = filepath.Join(path, utils.RootIndexPath)
+	return os.WriteFile(path, b, 0644)
 }

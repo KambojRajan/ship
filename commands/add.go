@@ -10,10 +10,16 @@ import (
 )
 
 func Add(path string) error {
-	index, err := entities.LoadIndex()
+	_, err := utils.ShipHasBeenInit(path)
 	if err != nil {
 		return err
 	}
+	index, err := entities.LoadIndex(path)
+	if err != nil {
+		return err
+	}
+
+	currentFiles := make(map[string]bool)
 
 	err = filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
 		if info.IsDir() && info.Name() == utils.RootShipDir {
@@ -52,6 +58,8 @@ func Add(path string) error {
 			Mode: mode,
 		}
 
+		currentFiles[rel] = true
+
 		return nil
 	})
 
@@ -59,7 +67,13 @@ func Add(path string) error {
 		return err
 	}
 
-	if err = entities.SaveIndex(index); err != nil {
+	for path := range index.Entries {
+		if !currentFiles[path] {
+			delete(index.Entries, path)
+		}
+	}
+
+	if err = entities.SaveIndex(path, index); err != nil {
 		return err
 	}
 

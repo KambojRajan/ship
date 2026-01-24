@@ -6,6 +6,10 @@ type IndexEntry struct {
 	Mode uint32
 }
 
+func (i IndexEntry) Equal(expected IndexEntry) bool {
+	return i.Path == expected.Path && i.Hash == expected.Hash && i.Mode == expected.Mode
+}
+
 type TempDirNode struct {
 	Files map[string]IndexEntry
 	Dirs  map[string]*TempDirNode
