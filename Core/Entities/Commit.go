@@ -3,7 +3,6 @@ package entities
 import (
 	"bytes"
 	"fmt"
-	"time"
 
 	"github.com/KambojRajan/ship/Core/common"
 	"github.com/KambojRajan/ship/Core/utils"
@@ -63,7 +62,7 @@ func (c *Commit) serialize() []byte {
 func (c *Commit) CommitTree(treeHash [20]byte, parentHashes [][20]byte, author User, message string) ([20]byte, error) {
 	committer := c.Committer
 	if committer.Timestamp.IsZero() {
-		committer.Timestamp = time.Now()
+		committer.Timestamp = author.Timestamp
 	}
 
 	commit := NewCommit(treeHash, parentHashes, author, committer, message)
