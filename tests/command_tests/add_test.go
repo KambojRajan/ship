@@ -1,6 +1,7 @@
 package command_tests
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/KambojRajan/ship/commands"
@@ -13,6 +14,7 @@ func TestAdd_ToEmptyInitDir_ShouldPass(t *testing.T) {
 
 	err := commands.Init(info.RepoDir)
 	helpers.AssertNil(err)
+
 	err = commands.Add(info.RepoDir)
 	helpers.AssertNil(err)
 
@@ -20,10 +22,12 @@ func TestAdd_ToEmptyInitDir_ShouldPass(t *testing.T) {
 }
 
 func TestAddTwice_ToInitDir_ShouldPass(t *testing.T) {
+
 	info := helpers.Setup(t)
 
 	err := commands.Init(info.RepoDir)
 	helpers.AssertNil(err)
+
 	err = commands.Add(info.RepoDir)
 	helpers.AssertNil(err)
 	err = commands.Add(info.RepoDir)
@@ -34,30 +38,31 @@ func TestAddTwice_ToInitDir_ShouldPass(t *testing.T) {
 
 func TestAdd_ToUninitializedDir_ShouldFail(t *testing.T) {
 	info := helpers.Setup(t)
+
 	err := commands.Add(info.RepoDir)
 	helpers.AssertNotNil(err)
+
 	helpers.BurnDown(t)
 }
 
 func TestAdd_WithNoFiles_ShouldPass(t *testing.T) {
 	info := helpers.Setup(t)
+
 	err := commands.Init(info.RepoDir)
 	helpers.AssertNil(err)
 
-	// AddIndex with no files present (only .ship dir)
 	err = commands.Add(info.RepoDir)
 	helpers.AssertNil(err)
 
 	index, err := entities.LoadIndex(info.RepoDir)
 	helpers.AssertNil(err)
 	helpers.AssertEqual(t, len(index.Entries), 0)
+
 	helpers.BurnDown(t)
 }
 
 func TestAdd_WithNestedDirectories_ShouldPass(t *testing.T) {
 	info := helpers.Setup(t)
-	err := commands.Init(info.RepoDir)
-	helpers.AssertNil(err)
 
 	dirs := []string{"dir1", "dir2/subdir1", "dir2/subdir2", "a/b/c/d/e/f/g/h"}
 	for _, name := range dirs {
@@ -75,6 +80,9 @@ func TestAdd_WithNestedDirectories_ShouldPass(t *testing.T) {
 		helpers.WriteFile(t, info.RepoDir, name, []byte("content for "+name))
 	}
 
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
 	err = commands.Add(info.RepoDir)
 	helpers.AssertNil(err)
 
@@ -86,17 +94,19 @@ func TestAdd_WithNestedDirectories_ShouldPass(t *testing.T) {
 }
 
 func TestAdd_WithMixedContent_ShouldAddAll(t *testing.T) {
+	// Setup a temporary test directory
 	info := helpers.Setup(t)
-	err := commands.Init(info.RepoDir)
-	helpers.AssertNil(err)
 
 	helpers.WriteFile(t, info.RepoDir, "text.txt", []byte("text content"))
-	helpers.WriteFile(t, info.RepoDir, "binary.bin", []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A})
+	helpers.WriteFile(t, info.RepoDir, "binary.bin", []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}) // PNG header
 	helpers.WriteFile(t, info.RepoDir, "empty.txt", []byte(""))
-	helpers.WriteFile(t, info.RepoDir, "large.dat", make([]byte, 1024*1024))
+	helpers.WriteFile(t, info.RepoDir, "large.dat", make([]byte, 1024*1024)) // 1MB file
 	helpers.WriteFile(t, info.RepoDir, "script.sh", []byte("#!/bin/bash\necho test"))
 	helpers.WriteFile(t, info.RepoDir, "file1.txt", []byte("file 1"))
 	helpers.WriteFile(t, info.RepoDir, "file2.txt", []byte("file 2"))
+
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
 
 	err = commands.Add(info.RepoDir)
 	helpers.AssertNil(err)
@@ -111,6 +121,7 @@ func TestAdd_WithMixedContent_ShouldAddAll(t *testing.T) {
 
 func TestAdd_WithSpecialFilenames_ShouldPass(t *testing.T) {
 	info := helpers.Setup(t)
+
 	err := commands.Init(info.RepoDir)
 	helpers.AssertNil(err)
 
@@ -161,7 +172,9 @@ func TestAdd_WithModifiedFile_ShouldUpdateIndex(t *testing.T) {
 
 	initialIndex, err := entities.LoadIndex(info.RepoDir)
 	helpers.AssertNil(err)
-	initialHash := initialIndex.Entries["file1.txt"].Hash
+	path, err := filepath.EvalSymlinks(filepath.Join(info.RepoDir, "file1.txt"))
+	helpers.AssertNil(err)
+	initialHash := initialIndex.Entries[path].Hash
 
 	helpers.WriteFile(t, info.RepoDir, "file1.txt", []byte("modified content"))
 
@@ -170,36 +183,42 @@ func TestAdd_WithModifiedFile_ShouldUpdateIndex(t *testing.T) {
 
 	finalIndex, err := entities.LoadIndex(info.RepoDir)
 	helpers.AssertNil(err)
-	finalHash := finalIndex.Entries["file1.txt"].Hash
+	finalHash := finalIndex.Entries[path].Hash
 
 	helpers.AssertNotEqualIndex(t, initialIndex, finalIndex)
-
-	if initialHash == finalHash {
-		t.Fatalf("expected hash to change after modification")
-	}
+	helpers.AssertNotEqual(t, initialHash, finalHash)
 
 	helpers.BurnDown(t)
 }
 
 func TestAdd_WithDeletedFile_ShouldHandle(t *testing.T) {
+	// Setup a temporary test directory
 	info := helpers.Setup(t)
+
+	// Initialize the repository
 	err := commands.Init(info.RepoDir)
 	helpers.AssertNil(err)
 
+	// Create and stage a file
 	helpers.WriteFile(t, info.RepoDir, "file1.txt", []byte("content for file1.txt"))
 	err = commands.Add(info.RepoDir)
 	helpers.AssertNil(err)
 	helpers.AssertFileInIndex(t, info.RepoDir, "file1.txt")
 
+	// Delete the file from the working directory
 	helpers.DeleteFile(t, info.RepoDir, "file1.txt")
+
+	// Re-run add (should remove the file from the index)
 	err = commands.Add(info.RepoDir)
 	helpers.AssertNil(err)
 
+	// Verify that the file is no longer in the index
 	index, err := entities.LoadIndex(info.RepoDir)
 	helpers.AssertNil(err)
 	_, exists := index.Entries["file1.txt"]
 	helpers.AssertEqual(t, exists, false)
 
+	// Cleanup the test directory
 	helpers.BurnDown(t)
 }
 
@@ -285,7 +304,9 @@ func TestAdd_WithRegularFileMode_ShouldPass(t *testing.T) {
 	helpers.AssertNil(err)
 
 	helpers.AssertFileInIndex(t, info.RepoDir, "regular.txt")
-	helpers.AssertEqual(t, index.Entries["regular.txt"].Mode, uint32(100644))
+	path, err := filepath.EvalSymlinks(filepath.Join(info.RepoDir, "regular.txt"))
+	helpers.AssertNil(err)
+	helpers.AssertEqual(t, index.Entries[path].Mode, uint32(100644))
 
 	helpers.BurnDown(t)
 }

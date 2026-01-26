@@ -1,6 +1,7 @@
 package command_tests
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,9 +13,13 @@ import (
 	"github.com/KambojRajan/ship/tests/helpers"
 )
 
+func hashToString(hash [20]byte) string {
+	return hex.EncodeToString(hash[:])
+}
+
 func TestCommit_NewCommit_ShouldCreateValidCommit(t *testing.T) {
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
-	parentHashes := [][20]byte{}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	parentHashes := []string{}
 	author := entities.User{
 		Name:      "Test Author",
 		Email:     "author@example.com",
@@ -47,8 +52,8 @@ func TestCommit_WithNoParents_ShouldPass(t *testing.T) {
 	}()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
-	parentHashes := [][20]byte{}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	parentHashes := []string{}
 	author := entities.User{
 		Name:      "Test Author",
 		Email:     "author@example.com",
@@ -65,7 +70,7 @@ func TestCommit_WithNoParents_ShouldPass(t *testing.T) {
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
-	if commitHash == [20]byte{} {
+	if commitHash == "" {
 		t.Fatal("expected non-zero commit hash")
 	}
 
@@ -81,9 +86,9 @@ func TestCommit_WithSingleParent_ShouldPass(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
 	parentHash := [20]byte{20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
-	parentHashes := [][20]byte{parentHash}
+	parentHashes := []string{hashToString(parentHash)}
 	author := entities.User{
 		Name:      "Test Author",
 		Email:     "author@example.com",
@@ -100,7 +105,7 @@ func TestCommit_WithSingleParent_ShouldPass(t *testing.T) {
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
-	if commitHash == [20]byte{} {
+	if commitHash == "" {
 		t.Fatal("expected non-zero commit hash")
 	}
 	helpers.AssertEqual(t, len(commit.ParentHashes), 1)
@@ -117,10 +122,10 @@ func TestCommit_WithMultipleParents_ShouldPass(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
 	parent1 := [20]byte{10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	parent2 := [20]byte{20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
-	parentHashes := [][20]byte{parent1, parent2}
+	parentHashes := []string{hashToString(parent1), hashToString(parent2)}
 	author := entities.User{
 		Name:      "Test Author",
 		Email:     "author@example.com",
@@ -137,7 +142,7 @@ func TestCommit_WithMultipleParents_ShouldPass(t *testing.T) {
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
-	if commitHash == [20]byte{} {
+	if commitHash == "" {
 		t.Fatal("expected non-zero commit hash")
 	}
 	helpers.AssertEqual(t, len(commit.ParentHashes), 2)
@@ -154,8 +159,8 @@ func TestCommit_WithEmptyMessage_ShouldPass(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
-	parentHashes := [][20]byte{}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	parentHashes := []string{}
 	author := entities.User{
 		Name:      "Test Author",
 		Email:     "author@example.com",
@@ -172,7 +177,7 @@ func TestCommit_WithEmptyMessage_ShouldPass(t *testing.T) {
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
-	if commitHash == [20]byte{} {
+	if commitHash == "" {
 		t.Fatal("expected non-zero commit hash")
 	}
 	helpers.AssertEqual(t, commit.Message, "")
@@ -189,8 +194,8 @@ func TestCommit_WithLongMessage_ShouldPass(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
-	parentHashes := [][20]byte{}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	parentHashes := []string{}
 	author := entities.User{
 		Name:      "Test Author",
 		Email:     "author@example.com",
@@ -207,7 +212,7 @@ func TestCommit_WithLongMessage_ShouldPass(t *testing.T) {
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
-	if commitHash == [20]byte{} {
+	if commitHash == "" {
 		t.Fatal("expected non-zero commit hash")
 	}
 	helpers.AssertEqual(t, commit.Message, message)
@@ -224,8 +229,8 @@ func TestCommit_WithDifferentAuthorAndCommitter_ShouldPass(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
-	parentHashes := [][20]byte{}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	parentHashes := []string{}
 	author := entities.User{
 		Name:      "Original Author",
 		Email:     "author@example.com",
@@ -242,7 +247,7 @@ func TestCommit_WithDifferentAuthorAndCommitter_ShouldPass(t *testing.T) {
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
-	if commitHash == [20]byte{} {
+	if commitHash == "" {
 		t.Fatal("expected non-zero commit hash")
 	}
 	helpers.AssertEqual(t, commit.Author.Name, "Original Author")
@@ -260,8 +265,8 @@ func TestCommit_SameInputProducesSameHash_ShouldPass(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
-	parentHashes := [][20]byte{}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	parentHashes := []string{}
 	timestamp := time.Unix(1234567890, 0).UTC()
 	author := entities.User{
 		Name:      "Test Author",
@@ -297,8 +302,8 @@ func TestCommit_DifferentInputProducesDifferentHash_ShouldPass(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
-	parentHashes := [][20]byte{}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	parentHashes := []string{}
 	author := entities.User{
 		Name:      "Test Author",
 		Email:     "author@example.com",
@@ -334,8 +339,8 @@ func TestCommit_CommitTree_WithDefaultCommitter_ShouldUseAuthorTimestamp(t *test
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
-	parentHashes := [][20]byte{}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	parentHashes := []string{}
 	author := entities.User{
 		Name:      "Test Author",
 		Email:     "author@example.com",
@@ -353,7 +358,7 @@ func TestCommit_CommitTree_WithDefaultCommitter_ShouldUseAuthorTimestamp(t *test
 	commitHash, err := commit.CommitTree(treeHash, parentHashes, author, message)
 	helpers.AssertNil(err)
 
-	if commitHash == [20]byte{} {
+	if commitHash == "" {
 		t.Fatal("expected non-zero commit hash")
 	}
 
@@ -369,7 +374,7 @@ func TestCommit_WithValidTreeHash_ShouldStoreObject(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
 
 	author := entities.User{
 		Name:      "Test Author",
@@ -383,11 +388,11 @@ func TestCommit_WithValidTreeHash_ShouldStoreObject(t *testing.T) {
 	}
 	message := "Commit with valid tree hash"
 
-	commit := entities.NewCommit(treeHash, [][20]byte{}, author, committer, message)
+	commit := entities.NewCommit(treeHash, []string{}, author, committer, message)
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
-	if commitHash == [20]byte{} {
+	if commitHash == "" {
 		t.Fatal("expected non-zero commit hash")
 	}
 
@@ -411,8 +416,8 @@ func TestCommit_WithSpecialCharactersInMessage_ShouldPass(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
-	parentHashes := [][20]byte{}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	parentHashes := []string{}
 	author := entities.User{
 		Name:      "Test Author",
 		Email:     "author@example.com",
@@ -429,7 +434,7 @@ func TestCommit_WithSpecialCharactersInMessage_ShouldPass(t *testing.T) {
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
-	if commitHash == [20]byte{} {
+	if commitHash == "" {
 		t.Fatal("expected non-zero commit hash")
 	}
 	helpers.AssertEqual(t, commit.Message, message)
@@ -446,8 +451,8 @@ func TestCommit_WithUnicodeInMessage_ShouldPass(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
-	parentHashes := [][20]byte{}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	parentHashes := []string{}
 	author := entities.User{
 		Name:      "Test Author 测试",
 		Email:     "author@example.com",
@@ -464,7 +469,7 @@ func TestCommit_WithUnicodeInMessage_ShouldPass(t *testing.T) {
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
-	if commitHash == [20]byte{} {
+	if commitHash == "" {
 		t.Fatal("expected non-zero commit hash")
 	}
 	helpers.AssertEqual(t, commit.Message, message)
@@ -479,8 +484,8 @@ func TestCommit_WithoutInitializedRepo_ShouldCreateObject(t *testing.T) {
 	defer func() { _ = os.Chdir(oldDir) }()
 	_ = os.Chdir(info.RepoDir)
 
-	treeHash := [20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
-	parentHashes := [][20]byte{}
+	treeHash := hashToString([20]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	parentHashes := []string{}
 	author := entities.User{
 		Name:      "Test Author",
 		Email:     "author@example.com",
@@ -497,7 +502,7 @@ func TestCommit_WithoutInitializedRepo_ShouldCreateObject(t *testing.T) {
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
-	if commitHash == [20]byte{} {
+	if commitHash == "" {
 		t.Fatal("expected non-zero commit hash")
 	}
 

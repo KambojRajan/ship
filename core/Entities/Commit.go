@@ -9,14 +9,14 @@ import (
 )
 
 type Commit struct {
-	TreeHash     [20]byte
-	ParentHashes [][20]byte
+	TreeHash     string
+	ParentHashes []string
 	Author       User
 	Committer    User
 	Message      string
 }
 
-func NewCommit(treeHash [20]byte, parentHashes [][20]byte, author User, committer User, message string) *Commit {
+func NewCommit(treeHash string, parentHashes []string, author User, committer User, message string) *Commit {
 	return &Commit{
 		TreeHash:     treeHash,
 		ParentHashes: parentHashes,
@@ -26,7 +26,7 @@ func NewCommit(treeHash [20]byte, parentHashes [][20]byte, author User, committe
 	}
 }
 
-func (c *Commit) Commit() ([20]byte, error) {
+func (c *Commit) Commit() (string, error) {
 	content := c.serialize()
 	return utils.HashObject(content, common.COMMIT, true)
 }
@@ -35,12 +35,12 @@ func (c *Commit) serialize() []byte {
 	var buffer bytes.Buffer
 
 	buffer.WriteString(fmt.Sprintf("%s ", utils.TREE))
-	buffer.WriteString(utils.GetHashString(c.TreeHash))
+	buffer.WriteString(c.TreeHash)
 	buffer.WriteByte(utils.NEWLINE)
 
 	for _, parentHash := range c.ParentHashes {
 		buffer.WriteString(fmt.Sprintf("%s ", utils.PARENT))
-		buffer.WriteString(utils.GetHashString(parentHash))
+		buffer.WriteString(parentHash)
 		buffer.WriteByte(utils.NEWLINE)
 	}
 
@@ -59,7 +59,7 @@ func (c *Commit) serialize() []byte {
 	return buffer.Bytes()
 }
 
-func (c *Commit) CommitTree(treeHash [20]byte, parentHashes [][20]byte, author User, message string) ([20]byte, error) {
+func (c *Commit) CommitTree(treeHash string, parentHashes []string, author User, message string) (string, error) {
 	committer := c.Committer
 	if committer.Timestamp.IsZero() {
 		committer.Timestamp = author.Timestamp

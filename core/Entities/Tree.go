@@ -13,17 +13,17 @@ type Tree struct {
 	Nodes []Node
 }
 
-func (t *Tree) WriteTree(index Index) ([20]byte, error) {
+func (t *Tree) WriteTree(index Index) (string, error) {
 	root := buildTempDirTree(index)
 
 	return writeTreeRecursive(root)
 }
 
-func writeTreeRecursive(root *common.TempDirNode) ([20]byte, error) {
+func writeTreeRecursive(root *common.TempDirNode) (string, error) {
 	for _, dir := range root.Dirs {
 		childHash, err := writeTreeRecursive(dir)
 		if err != nil {
-			return [20]byte{}, err
+			return "", err
 		}
 		dir.Hash = childHash
 	}
@@ -60,7 +60,7 @@ func serializeTree(root *common.TempDirNode) []byte {
 		buffer.WriteString(entry.modeString() + " ")
 		buffer.WriteString(entry.Name)
 		buffer.WriteByte(0)
-		buffer.Write(entry.Hash[:])
+		buffer.Write([]byte(entry.Hash))
 	}
 	return buffer.Bytes()
 }

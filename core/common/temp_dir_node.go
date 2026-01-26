@@ -2,7 +2,7 @@ package common
 
 type IndexEntry struct {
 	Path string
-	Hash [20]byte
+	Hash string
 	Mode uint32
 }
 
@@ -13,7 +13,7 @@ func (i IndexEntry) Equal(expected IndexEntry) bool {
 type TempDirNode struct {
 	Files map[string]IndexEntry
 	Dirs  map[string]*TempDirNode
-	Hash  [20]byte
+	Hash  string
 }
 
 func NewTempDirTree() *TempDirNode {

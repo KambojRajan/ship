@@ -11,6 +11,7 @@ var addCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := commands.Add(args...); err != nil {
+			// Print any errors that occur during staging
 			cmd.PrintErr(err)
 		}
 	},

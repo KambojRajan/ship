@@ -40,6 +40,13 @@ func AssertEqual(t *testing.T, expected, actual interface{}) {
 	}
 }
 
+func AssertNotEqual(t *testing.T, expected, actual any) {
+	t.Helper()
+	if expected == actual {
+		t.Fatalf("expected %v to not be equal to %v", expected, actual)
+	}
+}
+
 func WriteFile(t *testing.T, dir, filename string, content []byte) {
 	t.Helper()
 	fullPath := filepath.Join(dir, filename)
@@ -79,8 +86,11 @@ func AssertFileInIndex(t *testing.T, repoDir, filename string) {
 		t.Fatalf("failed to load index: %v", err)
 	}
 
-	if _, exists := index.Entries[filename]; !exists {
-		t.Fatalf("expected file %s to be in index, but it was not found", filename)
+	relPath := filepath.Join(repoDir, filename)
+
+	absRelPath, _ := filepath.EvalSymlinks(relPath)
+	if _, ok := index.Entries[absRelPath]; !ok {
+		t.Fatalf("file %s not found in index", filename)
 	}
 }
 

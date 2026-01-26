@@ -59,17 +59,24 @@ func processPath(baseRepoPath, givenPath, relPath string, index *entities.Index)
 		if err != nil {
 			return err
 		}
+
 		if exists := utils.ObjectExists(hash, baseRepoPath); exists {
 			return nil
 		}
+
 		hash, err = utils.HashObject(data, common.BLOB, true)
 
 		if err != nil {
 			return err
 		}
 
+		path, err = filepath.EvalSymlinks(path)
+		if err != nil {
+			return err
+		}
+
 		index.AddIndex(common.IndexEntry{
-			Path: getRelativePath(relPath, path),
+			Path: path,
 			Hash: hash,
 			Mode: utils.GetMode(info),
 		})
@@ -77,14 +84,6 @@ func processPath(baseRepoPath, givenPath, relPath string, index *entities.Index)
 		return nil
 	})
 	return err
-}
-
-func getRelativePath(basePath, path string) string {
-	relPath, err := filepath.Rel(basePath, path)
-	if err != nil {
-		return path
-	}
-	return relPath
 }
 
 func getRepoRelativePath(repoBasePath string, paths ...string) (map[string]string, error) {

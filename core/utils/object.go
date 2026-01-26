@@ -11,7 +11,7 @@ import (
 	"github.com/KambojRajan/ship/core/common"
 )
 
-func HashObject(data []byte, objectType common.ObjectType, write bool) ([20]byte, error) {
+func HashObject(data []byte, objectType common.ObjectType, write bool) (string, error) {
 	header := fmt.Sprintf("%s %d", objectType.String(), len(data))
 
 	var store bytes.Buffer
@@ -23,7 +23,7 @@ func HashObject(data []byte, objectType common.ObjectType, write bool) ([20]byte
 	hash := fmt.Sprintf("%x", h)
 
 	if !write {
-		return h, nil
+		return hash, nil
 	}
 
 	folder := hash[0:2]
@@ -31,17 +31,17 @@ func HashObject(data []byte, objectType common.ObjectType, write bool) ([20]byte
 
 	objectDir := filepath.Join(RootObjectDir, folder)
 	if err := os.MkdirAll(objectDir, 0755); err != nil {
-		return h, err
+		return hash, err
 	}
 
 	objectPath := filepath.Join(objectDir, file)
 
 	if _, err := os.Stat(objectPath); err == nil {
-		return h, nil
+		return hash, err
 	}
 	out, err := os.Create(objectPath)
 	if err != nil {
-		return h, err
+		return hash, err
 	}
 	defer func(out *os.File) {
 		err := out.Close()
@@ -59,24 +59,24 @@ func HashObject(data []byte, objectType common.ObjectType, write bool) ([20]byte
 	}(zw)
 
 	if _, err := zw.Write(store.Bytes()); err != nil {
-		return h, err
+		return hash, err
 	}
 
-	return h, nil
+	return hash, nil
 }
 
-func StoreObject(hash [20]byte, data []byte) error {
+func StoreObject(hash string, data []byte) error {
 	hashStr := fmt.Sprintf("%x", hash[:])
 	file := filepath.Join(".ship", "objects", hashStr)
 	return os.WriteFile(file, data, 0644)
 }
 
-func ObjectExists(hash [20]byte, baseRepoPath string) bool {
+func ObjectExists(hash string, baseRepoPath string) bool {
 	hashStr := fmt.Sprintf("%x", hash[:])
 	file := filepath.Join(baseRepoPath, RootObjectDir, hashStr[:2], hashStr[2:])
 
 	_, err := os.Stat(file)
-	return err != nil
+	return err == nil
 }
 
 func GetMode(info os.FileInfo) uint32 {
