@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/KambojRajan/ship/Core/utils"
 	"github.com/KambojRajan/ship/commands"
+	"github.com/KambojRajan/ship/core/utils"
 	"github.com/KambojRajan/ship/tests/helpers"
 )
 

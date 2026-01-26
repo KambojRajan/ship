@@ -3,8 +3,8 @@ package command_tests
 import (
 	"testing"
 
-	entities "github.com/KambojRajan/ship/Core/Entities"
 	"github.com/KambojRajan/ship/commands"
+	entities "github.com/KambojRajan/ship/core/Entities"
 	"github.com/KambojRajan/ship/tests/helpers"
 )
 
@@ -44,7 +44,7 @@ func TestAdd_WithNoFiles_ShouldPass(t *testing.T) {
 	err := commands.Init(info.RepoDir)
 	helpers.AssertNil(err)
 
-	// Add with no files present (only .ship dir)
+	// AddIndex with no files present (only .ship dir)
 	err = commands.Add(info.RepoDir)
 	helpers.AssertNil(err)
 

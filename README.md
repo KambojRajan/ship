@@ -9,7 +9,7 @@ Ship is a minimal implementation of a distributed version control system that mi
 ## ✨ Features
 
 - **Repository Initialization**: Create a new Ship repository with proper directory structure
-- **File Staging**: Add files to the staging area (index) for version tracking
+- **File Staging**: AddIndex files to the staging area (index) for version tracking
 - **Object Storage**: Content-addressable storage system using SHA-1 hashing
 - **Object Inspection**: View the contents of stored objects by their hash
 - **Blob Management**: Store file contents as blob objects
@@ -43,7 +43,7 @@ cd ship
 go build -o ship
 ```
 
-3. (Optional) Add to your PATH for system-wide access:
+3. (Optional) AddIndex to your PATH for system-wide access:
 ```bash
 # For macOS/Linux
 sudo mv ship /usr/local/bin/
@@ -72,9 +72,9 @@ This creates a `.ship` directory with the following structure:
 └── index             # Staging area
 ```
 
-### Add Files
+### AddIndex Files
 
-Add files to the staging area:
+AddIndex files to the staging area:
 
 ```bash
 ship add .
@@ -168,7 +168,7 @@ Contributions are welcome! Please feel free to submit issues, fork the repositor
 
 1. Fork the project
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+3. Commit your changes (`git commit -m 'AddIndex some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 

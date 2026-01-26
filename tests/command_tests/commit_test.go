@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KambojRajan/ship/Core/Entities"
 	"github.com/KambojRajan/ship/commands"
+	"github.com/KambojRajan/ship/core/Entities"
 	"github.com/KambojRajan/ship/tests/helpers"
 )
 

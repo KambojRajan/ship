@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/KambojRajan/ship/Core/utils"
+	"github.com/KambojRajan/ship/core/utils"
 )
 
 func CateFile(hash string) error {
