@@ -27,9 +27,8 @@ const (
 )
 
 const (
-	CatFileDefaultFormat = "-bsic"
-	CatFileFormatBlob    = "-p"
-	CatFileFormatTree    = "-t"
-	CatFileFormatCommit  = "-c"
-	CatFileContentSize   = "-s"
+	CatFileFormatPretty = "-p"
+	CatFileFormatTree   = "-t"
+	CatFileFormatCommit = "-c"
+	CatFileContentSize  = "-s"
 )

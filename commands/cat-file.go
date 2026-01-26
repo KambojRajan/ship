@@ -14,7 +14,7 @@ import (
 
 func CatFile(args ...string) (string, error) {
 	hash := args[0]
-	flag := utils.CatFileDefaultFormat
+	flag := utils.CatFileFormatPretty
 	if len(args) > 1 {
 		flag = args[1]
 	}
@@ -56,19 +56,20 @@ func CatFile(args ...string) (string, error) {
 	header := string(parts[0])
 
 	headerFields := strings.Split(header, " ")
+	objectType := headerFields[0]
 	objectSize := headerFields[1]
+	content := string(parts[1])
 	if len(headerFields) != 2 {
 		return "", fmt.Errorf(utils.ErrInvalidObjectHeader)
 	}
 	switch flag {
-	case utils.CatFileDefaultFormat:
-		return string(parts[1]), nil
-	case utils.CatFileFormatBlob:
-		return string(decompressed), nil
+	case utils.CatFileFormatPretty:
+		return fmt.Sprintf("%s %s %s", objectType, objectSize, content), nil
 	case utils.CatFileContentSize:
 		return objectSize, nil
 	case utils.CatFileFormatTree:
-		return string(parts[1]), nil
+		return content, nil
+	default:
+		return string(decompressed), nil
 	}
-	return "", nil
 }
