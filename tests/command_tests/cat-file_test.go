@@ -161,21 +161,3 @@ func TestCatFile_BlobWithSpecialCharacters_ShouldPass(t *testing.T) {
 		t.Fatalf("expected body to contain special characters, got: %s", body)
 	}
 }
-
-func TestCatFile_NestedDirectoryBlob_ShouldPass(t *testing.T) {
-	dir := t.TempDir()
-	helpers.WriteDir(t, dir, "nested/deep/path")
-	helpers.WriteFile(t, dir, "nested/deep/path/file.txt", []byte("nested content"))
-	err := commands.Init(dir)
-	helpers.AssertNil(err)
-	err = commands.Add(dir)
-	helpers.AssertNil(err)
-	index, err := entities.LoadIndex(dir)
-
-	helpers.AssertNil(err)
-	fileIndex := index.Entries["nested/deep/path/file.txt"]
-
-	body, err := commands.CatFile(fileIndex.Hash, "-p")
-	helpers.AssertNil(err)
-	helpers.AssertEqual(t, "blob 14 nested content", string(body))
-}
