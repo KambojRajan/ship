@@ -9,6 +9,7 @@ const (
 	RootObjectDir = ".ship/objects"
 	RootIndexPath = ".ship/index"
 	RootHEADPath  = ".ship/HEAD"
+	MainHeadPath  = "refs/heads/main"
 )
 
 const (

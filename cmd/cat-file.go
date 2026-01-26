@@ -9,10 +9,10 @@ import (
 )
 
 var (
-	catFileFlagP bool // pretty-print
-	catFileFlagT bool // tree
-	catFileFlagC bool // commit
-	catFileFlagS bool // size
+	catFileFlagP bool
+	catFileFlagT bool
+	catFileFlagC bool
+	catFileFlagS bool
 )
 
 var catFileCmd = &cobra.Command{

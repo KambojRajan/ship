@@ -2,7 +2,6 @@ package command_tests
 
 import (
 	"encoding/hex"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -396,8 +395,7 @@ func TestCommit_WithValidTreeHash_ShouldStoreObject(t *testing.T) {
 		t.Fatal("expected non-zero commit hash")
 	}
 
-	hashStr := fmt.Sprintf("%x", commitHash[:])
-	objectPath := filepath.Join(info.RepoDir, ".ship", "objects", hashStr[:2], hashStr[2:])
+	objectPath := filepath.Join(info.RepoDir, ".ship", "objects", commitHash[:2], commitHash[2:])
 
 	_, err = os.Stat(objectPath)
 	if err != nil {

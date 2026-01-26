@@ -23,7 +23,7 @@ func AssertExists(t *testing.T, path string) {
 
 func AssertNil(err error) {
 	if err != nil {
-		panic("expected error")
+		panic(fmt.Sprintf("expected nil, got error: %v", err))
 	}
 }
 
@@ -86,7 +86,6 @@ func AssertFileInIndex(t *testing.T, repoDir, filename string) {
 		t.Fatalf("failed to load index: %v", err)
 	}
 
-	// Check for relative path (filename as-is, which is relative to repoDir)
 	if _, ok := index.Entries[filename]; !ok {
 		t.Fatalf("file %s not found in index", filename)
 	}

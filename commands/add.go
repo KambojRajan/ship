@@ -36,16 +36,24 @@ func Add(paths ...string) error {
 		return err
 	}
 
+	existingFiles := make(map[string]bool)
+
 	for path := range relPathMap {
-		if err := processPath(repoBasePath, path, index); err != nil {
+		if err := processPath(repoBasePath, path, index, existingFiles); err != nil {
 			return err
+		}
+	}
+
+	for entry := range index.Entries {
+		if !existingFiles[entry] {
+			delete(index.Entries, entry)
 		}
 	}
 
 	return index.Save(repoBasePath)
 }
 
-func processPath(baseRepoPath, givenPath string, index *entities.Index) error {
+func processPath(baseRepoPath, givenPath string, index *entities.Index, existingFiles map[string]bool) error {
 	err := filepath.Walk(givenPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -89,6 +97,7 @@ func processPath(baseRepoPath, givenPath string, index *entities.Index) error {
 			return err
 		}
 
+		existingFiles[relPath] = true
 		index.AddIndex(common.IndexEntry{
 			Path: relPath,
 			Hash: hash,

@@ -2,7 +2,6 @@ package command_tests
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/KambojRajan/ship/commands"
@@ -119,7 +118,6 @@ func TestAdd_WithNestedDirectories_ShouldPass(t *testing.T) {
 }
 
 func TestAdd_WithMixedContent_ShouldAddAll(t *testing.T) {
-	// Setup a temporary test directory
 	info := helpers.Setup(t)
 
 	helpers.WriteFile(t, info.RepoDir, "text.txt", []byte("text content"))
@@ -217,33 +215,26 @@ func TestAdd_WithModifiedFile_ShouldUpdateIndex(t *testing.T) {
 }
 
 func TestAdd_WithDeletedFile_ShouldHandle(t *testing.T) {
-	// Setup a temporary test directory
 	info := helpers.Setup(t)
 
-	// Initialize the repository
 	err := commands.Init(info.RepoDir)
 	helpers.AssertNil(err)
 
-	// Create and stage a file
 	helpers.WriteFile(t, info.RepoDir, "file1.txt", []byte("content for file1.txt"))
 	err = commands.Add(info.RepoDir)
 	helpers.AssertNil(err)
 	helpers.AssertFileInIndex(t, info.RepoDir, "file1.txt")
 
-	// Delete the file from the working directory
 	helpers.DeleteFile(t, info.RepoDir, "file1.txt")
 
-	// Re-run add (should remove the file from the index)
 	err = commands.Add(info.RepoDir)
 	helpers.AssertNil(err)
 
-	// Verify that the file is no longer in the index
 	index, err := entities.LoadIndex(info.RepoDir)
 	helpers.AssertNil(err)
 	_, exists := index.Entries["file1.txt"]
-	helpers.AssertEqual(t, exists, false)
+	helpers.AssertEqual(t, false, exists)
 
-	// Cleanup the test directory
 	helpers.BurnDown(t)
 }
 
@@ -252,7 +243,6 @@ func TestAdd_WithIdenticalContent_ShouldReuseObject(t *testing.T) {
 	err := commands.Init(info.RepoDir)
 	helpers.AssertNil(err)
 
-	// Create two files with identical content
 	content := []byte("identical content")
 	helpers.WriteFile(t, info.RepoDir, "file1.txt", content)
 	helpers.WriteFile(t, info.RepoDir, "file2.txt", content)
@@ -329,9 +319,8 @@ func TestAdd_WithRegularFileMode_ShouldPass(t *testing.T) {
 	helpers.AssertNil(err)
 
 	helpers.AssertFileInIndex(t, info.RepoDir, "regular.txt")
-	path, err := filepath.EvalSymlinks(filepath.Join(info.RepoDir, "regular.txt"))
 	helpers.AssertNil(err)
-	helpers.AssertEqual(t, index.Entries[path].Mode, uint32(100644))
+	helpers.AssertEqual(t, uint32(100644), index.Entries["regular.txt"].Mode)
 
 	helpers.BurnDown(t)
 }

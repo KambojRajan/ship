@@ -2,7 +2,6 @@ package command_tests
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -10,17 +9,6 @@ import (
 	entities "github.com/KambojRajan/ship/core/Entities"
 	"github.com/KambojRajan/ship/tests/helpers"
 )
-
-func TestRunAllTests(t *testing.T) {
-	t.Run("TestCatFile_blobHash_ShouldPass", TestCatFile_blobHash_ShouldPass)
-	t.Run("TestCatFile_WithSizeFlag_ShouldReturnSize", TestCatFile_WithSizeFlag_ShouldReturnSize)
-	t.Run("TestCatFile_MultipleBlobsWithDifferentContent_ShouldPass", TestCatFile_MultipleBlobsWithDifferentContent_ShouldPass)
-	t.Run("TestCatFile_EmptyFile_ShouldPass", TestCatFile_EmptyFile_ShouldPass)
-	t.Run("TestCatFile_LargeBlobContent_ShouldPass", TestCatFile_LargeBlobContent_ShouldPass)
-	t.Run("TestCatFile_NonExistentHash_ShouldFail", TestCatFile_NonExistentHash_ShouldFail)
-	t.Run("TestCatFile_TreeObject_ShouldPass", TestCatFile_TreeObject_ShouldPass)
-	t.Run("TestCatFile_CommitObject_ShouldPass", TestCatFile_CommitObject_ShouldPass)
-}
 
 func TestCatFile_blobHash_ShouldPass(t *testing.T) {
 	dir := t.TempDir()
@@ -30,9 +18,8 @@ func TestCatFile_blobHash_ShouldPass(t *testing.T) {
 	err = commands.Add(dir)
 	helpers.AssertNil(err)
 	index, err := entities.LoadIndex(dir)
-	filePath, err := filepath.EvalSymlinks(filepath.Join(dir, "test.txt"))
 	helpers.AssertNil(err)
-	fileIndex := index.Entries[filePath]
+	fileIndex := index.Entries["test.txt"]
 
 	body, err := commands.CatFile(fileIndex.Hash, "-p")
 	helpers.AssertNil(err)
@@ -47,9 +34,8 @@ func TestCatFile_WithSizeFlag_ShouldReturnSize(t *testing.T) {
 	err = commands.Add(dir)
 	helpers.AssertNil(err)
 	index, err := entities.LoadIndex(dir)
-	filePath, err := filepath.EvalSymlinks(filepath.Join(dir, "test.txt"))
 	helpers.AssertNil(err)
-	fileIndex := index.Entries[filePath]
+	fileIndex := index.Entries["test.txt"]
 
 	body, err := commands.CatFile(fileIndex.Hash, "-s")
 	helpers.AssertNil(err)
@@ -67,13 +53,11 @@ func TestCatFile_MultipleBlobsWithDifferentContent_ShouldPass(t *testing.T) {
 	index, err := entities.LoadIndex(dir)
 	helpers.AssertNil(err)
 
-	filePath1, err := filepath.EvalSymlinks(filepath.Join(dir, "file1.txt"))
 	helpers.AssertNil(err)
-	fileIndex1 := index.Entries[filePath1]
+	fileIndex1 := index.Entries["file1.txt"]
 
-	filePath2, err := filepath.EvalSymlinks(filepath.Join(dir, "file2.txt"))
 	helpers.AssertNil(err)
-	fileIndex2 := index.Entries[filePath2]
+	fileIndex2 := index.Entries["file2.txt"]
 
 	body1, err := commands.CatFile(fileIndex1.Hash, "-p")
 	helpers.AssertNil(err)
@@ -92,9 +76,8 @@ func TestCatFile_EmptyFile_ShouldPass(t *testing.T) {
 	err = commands.Add(dir)
 	helpers.AssertNil(err)
 	index, err := entities.LoadIndex(dir)
-	filePath, err := filepath.EvalSymlinks(filepath.Join(dir, "empty.txt"))
 	helpers.AssertNil(err)
-	fileIndex := index.Entries[filePath]
+	fileIndex := index.Entries["empty.txt"]
 
 	body, err := commands.CatFile(fileIndex.Hash, "-p")
 	helpers.AssertNil(err)
@@ -110,9 +93,9 @@ func TestCatFile_LargeBlobContent_ShouldPass(t *testing.T) {
 	err = commands.Add(dir)
 	helpers.AssertNil(err)
 	index, err := entities.LoadIndex(dir)
-	filePath, err := filepath.EvalSymlinks(filepath.Join(dir, "large.txt"))
+
 	helpers.AssertNil(err)
-	fileIndex := index.Entries[filePath]
+	fileIndex := index.Entries["large.txt"]
 
 	body, err := commands.CatFile(fileIndex.Hash, "-p")
 	helpers.AssertNil(err)
@@ -151,9 +134,8 @@ func TestCatFile_BlobWithNewlines_ShouldPass(t *testing.T) {
 	err = commands.Add(dir)
 	helpers.AssertNil(err)
 	index, err := entities.LoadIndex(dir)
-	filePath, err := filepath.EvalSymlinks(filepath.Join(dir, "multiline.txt"))
 	helpers.AssertNil(err)
-	fileIndex := index.Entries[filePath]
+	fileIndex := index.Entries["multiline.txt"]
 
 	body, err := commands.CatFile(fileIndex.Hash, "-p")
 	helpers.AssertNil(err)
@@ -170,9 +152,8 @@ func TestCatFile_BlobWithSpecialCharacters_ShouldPass(t *testing.T) {
 	err = commands.Add(dir)
 	helpers.AssertNil(err)
 	index, err := entities.LoadIndex(dir)
-	filePath, err := filepath.EvalSymlinks(filepath.Join(dir, "special.txt"))
 	helpers.AssertNil(err)
-	fileIndex := index.Entries[filePath]
+	fileIndex := index.Entries["special.txt"]
 
 	body, err := commands.CatFile(fileIndex.Hash, "-p")
 	helpers.AssertNil(err)
@@ -190,9 +171,9 @@ func TestCatFile_NestedDirectoryBlob_ShouldPass(t *testing.T) {
 	err = commands.Add(dir)
 	helpers.AssertNil(err)
 	index, err := entities.LoadIndex(dir)
-	filePath, err := filepath.EvalSymlinks(filepath.Join(dir, "nested/deep/path/file.txt"))
+
 	helpers.AssertNil(err)
-	fileIndex := index.Entries[filePath]
+	fileIndex := index.Entries["nested/deep/path/file.txt"]
 
 	body, err := commands.CatFile(fileIndex.Hash, "-p")
 	helpers.AssertNil(err)
