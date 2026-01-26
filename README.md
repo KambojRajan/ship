@@ -28,17 +28,34 @@ Ship is a minimal implementation of a distributed version control system that mi
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-- Go 1.24.10 or higher
-
 ### Installation
 
 Choose the installation method that works best for you:
 
 #### Option 1: Quick Install (Recommended)
 
-Clone and install with one command:
+Install with a single command:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/KambojRajan/ship/master/remote-install.sh | bash
+```
+
+This script will:
+- ✅ Detect your OS and architecture
+- ✅ Download pre-built binary (if available) or build from source
+- ✅ Install to `/usr/local/bin`
+
+#### Option 2: Install via Go
+
+If you have Go installed:
+
+```bash
+go install github.com/KambojRajan/ship@latest
+```
+
+#### Option 3: Build from Source
+
+Clone and install manually:
 
 ```bash
 git clone https://github.com/KambojRajan/ship.git
@@ -46,16 +63,7 @@ cd ship
 ./install.sh
 ```
 
-The script will:
-- ✅ Check your Go installation
-- ✅ Download dependencies
-- ✅ Build the binary
-- ✅ Install to `/usr/local/bin`
-- ✅ Verify the installation
-
-#### Option 2: Using Make
-
-If you prefer using Make:
+Or use Make:
 
 ```bash
 git clone https://github.com/KambojRajan/ship.git
@@ -63,11 +71,19 @@ cd ship
 make install
 ```
 
-Available Make commands:
-- `make build` - Build the binary to `bin/ship`
-- `make install` - Build and install to system PATH
-- `make uninstall` - Remove from system PATH
-- `make test` - Run tests
+### Prerequisites
+
+- **For Option 1**: No prerequisites (Go will be used if available, otherwise pre-built binary)
+- **For Options 2-3**: Go 1.24.10 or higher
+
+### Verify Installation
+
+After installation, verify ship is working:
+
+```bash
+ship --help
+ship init .
+```
 - `make clean` - Remove build artifacts
 - `make help` - Show all available commands
 
