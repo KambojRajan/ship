@@ -1,6 +1,7 @@
 package command_tests
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -16,6 +17,30 @@ func TestAdd_ToEmptyInitDir_ShouldPass(t *testing.T) {
 	helpers.AssertNil(err)
 
 	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.BurnDown(t)
+}
+
+func TestAdd_ToCurrentInitDir_ShouldPass(t *testing.T) {
+	info := helpers.Setup(t)
+
+	originalDir, err := os.Getwd()
+	helpers.AssertNil(err)
+
+	err = os.Chdir(info.RepoDir)
+	helpers.AssertNil(err)
+	defer func() {
+		err := os.Chdir(originalDir)
+		if err != nil {
+			return
+		}
+	}()
+
+	err = commands.Init(".")
+	helpers.AssertNil(err)
+
+	err = commands.Add(".")
 	helpers.AssertNil(err)
 
 	helpers.BurnDown(t)

@@ -54,7 +54,7 @@ func HashObject(data []byte, objectType common.ObjectType, write bool) (string, 
 	defer func(zw *zlib.Writer) {
 		err := zw.Close()
 		if err != nil {
-
+			panic(err)
 		}
 	}(zw)
 

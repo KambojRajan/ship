@@ -17,6 +17,10 @@ func Add(paths ...string) error {
 		return err
 	}
 
+	if repoBasePath == "" {
+		return fmt.Errorf("not a ship repository (or any of the parent directories)")
+	}
+
 	index, err := entities.LoadIndex(repoBasePath)
 	if err != nil {
 		return err

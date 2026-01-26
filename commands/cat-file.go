@@ -6,67 +6,69 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/KambojRajan/ship/core/utils"
 )
 
-func CateFile(hash string) error {
+func CatFile(args ...string) (string, error) {
+	hash := args[0]
+	flag := utils.CatFileDefaultFormat
+	if len(args) > 1 {
+		flag = args[1]
+	}
 	folder := hash[0:2]
 	file := hash[2:]
 
-	path := fmt.Sprintf(utils.RootObjectDir+"/%v/%v", folder, file)
+	path := filepath.Join(utils.RootObjectDir, folder, file)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return err
+		return "", err
 	}
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	zr, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer func(zr io.ReadCloser) {
 		err := zr.Close()
 		if err != nil {
-
+			_ = fmt.Errorf(err.Error())
 		}
 	}(zr)
 
 	decompressed, err := io.ReadAll(zr)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	parts := bytes.SplitN(decompressed, []byte{0}, 2)
 	if len(parts) != 2 {
-		return fmt.Errorf(utils.ErrInvalidObjectFormat)
+		return "", fmt.Errorf(utils.ErrInvalidObjectFormat)
 	}
 
 	header := string(parts[0])
-	body := parts[1]
 
 	headerFields := strings.Split(header, " ")
+	objectSize := headerFields[1]
 	if len(headerFields) != 2 {
-		return fmt.Errorf(utils.ErrInvalidObjectHeader)
+		return "", fmt.Errorf(utils.ErrInvalidObjectHeader)
 	}
-
-	objectType := headerFields[0]
-
-	switch objectType {
-	case utils.BLOB:
-		fmt.Print(string(body))
-	case utils.COMMIT:
-		fmt.Print(string(body))
-	case utils.TREE:
-		return fmt.Errorf(utils.ErrTreeNotImplemented)
-	default:
-		return fmt.Errorf(utils.ErrUnknownType, objectType)
+	switch flag {
+	case utils.CatFileDefaultFormat:
+		return string(parts[1]), nil
+	case utils.CatFileFormatBlob:
+		return string(decompressed), nil
+	case utils.CatFileContentSize:
+		return objectSize, nil
+	case utils.CatFileFormatTree:
+		return string(parts[1]), nil
 	}
-
-	return nil
+	return "", nil
 }
