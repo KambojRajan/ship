@@ -12,13 +12,18 @@ import (
 )
 
 func Add(paths ...string) error {
-	repoBasePath, err := utils.ShipHasBeenInitRecursive(paths)
+	repoBasePath, err := utils.ShipHasBeenInitRecursive(paths...)
 	if err != nil {
 		return err
 	}
 
 	if repoBasePath == "" {
 		return fmt.Errorf("not a ship repository (or any of the parent directories)")
+	}
+
+	repoBasePath, err = filepath.EvalSymlinks(repoBasePath)
+	if err != nil {
+		return fmt.Errorf("error resolving repository path: %w", err)
 	}
 
 	index, err := entities.LoadIndex(repoBasePath)
@@ -31,8 +36,8 @@ func Add(paths ...string) error {
 		return err
 	}
 
-	for path, relPath := range relPathMap {
-		if err := processPath(repoBasePath, path, relPath, index); err != nil {
+	for path := range relPathMap {
+		if err := processPath(repoBasePath, path, index); err != nil {
 			return err
 		}
 	}
@@ -40,7 +45,7 @@ func Add(paths ...string) error {
 	return index.Save(repoBasePath)
 }
 
-func processPath(baseRepoPath, givenPath, relPath string, index *entities.Index) error {
+func processPath(baseRepoPath, givenPath string, index *entities.Index) error {
 	err := filepath.Walk(givenPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -79,8 +84,13 @@ func processPath(baseRepoPath, givenPath, relPath string, index *entities.Index)
 			return err
 		}
 
+		relPath, err := filepath.Rel(baseRepoPath, path)
+		if err != nil {
+			return err
+		}
+
 		index.AddIndex(common.IndexEntry{
-			Path: path,
+			Path: relPath,
 			Hash: hash,
 			Mode: utils.GetMode(info),
 		})

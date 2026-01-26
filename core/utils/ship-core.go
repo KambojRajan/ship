@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func ShipHasBeenInitRecursive(paths []string) (repoPath string, err error) {
+func ShipHasBeenInitRecursive(paths ...string) (repoPath string, err error) {
 	for _, path := range paths {
 		pathToCheck, err := searchBaseRepo(path)
 		if err != nil {

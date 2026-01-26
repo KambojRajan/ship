@@ -32,3 +32,16 @@ const (
 	CatFileFormatCommit = "-c"
 	CatFileContentSize  = "-s"
 )
+
+const (
+	Reset = "\033[0m"
+
+	ShipBlue = "\033[34m"       // staged
+	Sand     = "\033[33m"       // unstaged (safe)
+	Sand256  = "\033[38;5;223m" // prettier sand
+)
+
+const (
+	Staged   = "staged"
+	Unstaged = "unstaged"
+)

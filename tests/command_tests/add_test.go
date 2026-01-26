@@ -197,9 +197,9 @@ func TestAdd_WithModifiedFile_ShouldUpdateIndex(t *testing.T) {
 
 	initialIndex, err := entities.LoadIndex(info.RepoDir)
 	helpers.AssertNil(err)
-	path, err := filepath.EvalSymlinks(filepath.Join(info.RepoDir, "file1.txt"))
-	helpers.AssertNil(err)
-	initialHash := initialIndex.Entries[path].Hash
+	// Use relative path instead of absolute path
+	relPath := "file1.txt"
+	initialHash := initialIndex.Entries[relPath].Hash
 
 	helpers.WriteFile(t, info.RepoDir, "file1.txt", []byte("modified content"))
 
@@ -208,7 +208,7 @@ func TestAdd_WithModifiedFile_ShouldUpdateIndex(t *testing.T) {
 
 	finalIndex, err := entities.LoadIndex(info.RepoDir)
 	helpers.AssertNil(err)
-	finalHash := finalIndex.Entries[path].Hash
+	finalHash := finalIndex.Entries[relPath].Hash
 
 	helpers.AssertNotEqualIndex(t, initialIndex, finalIndex)
 	helpers.AssertNotEqual(t, initialHash, finalHash)

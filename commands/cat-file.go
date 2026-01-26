@@ -12,12 +12,7 @@ import (
 	"github.com/KambojRajan/ship/core/utils"
 )
 
-func CatFile(args ...string) (string, error) {
-	hash := args[0]
-	flag := utils.CatFileFormatPretty
-	if len(args) > 1 {
-		flag = args[1]
-	}
+func CatFile(hash, flag string) (string, error) {
 	folder := hash[0:2]
 	file := hash[2:]
 

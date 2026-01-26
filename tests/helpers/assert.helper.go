@@ -86,10 +86,8 @@ func AssertFileInIndex(t *testing.T, repoDir, filename string) {
 		t.Fatalf("failed to load index: %v", err)
 	}
 
-	relPath := filepath.Join(repoDir, filename)
-
-	absRelPath, _ := filepath.EvalSymlinks(relPath)
-	if _, ok := index.Entries[absRelPath]; !ok {
+	// Check for relative path (filename as-is, which is relative to repoDir)
+	if _, ok := index.Entries[filename]; !ok {
 		t.Fatalf("file %s not found in index", filename)
 	}
 }
