@@ -2,6 +2,8 @@
 
 A lightweight, Git-inspired version control system written in Go. Ship implements core version control functionalities including repository initialization, file staging, and object storage using content-addressable storage.
 
+> **🚀 New to Ship?** Check out the [Quick Start Guide](QUICKSTART.md) to get up and running in under 2 minutes!
+
 ## 📖 Overview
 
 Ship is a minimal implementation of a distributed version control system that mimics Git's core architecture. It provides fundamental version control operations and stores objects using SHA-1 hashing with zlib compression, similar to how Git manages its object database.
@@ -32,21 +34,63 @@ Ship is a minimal implementation of a distributed version control system that mi
 
 ### Installation
 
-1. Clone the repository:
+Choose the installation method that works best for you:
+
+#### Option 1: Quick Install (Recommended)
+
+Clone and install with one command:
+
 ```bash
 git clone https://github.com/KambojRajan/ship.git
 cd ship
+./install.sh
 ```
 
-2. Build the project:
+The script will:
+- ✅ Check your Go installation
+- ✅ Download dependencies
+- ✅ Build the binary
+- ✅ Install to `/usr/local/bin`
+- ✅ Verify the installation
+
+#### Option 2: Using Make
+
+If you prefer using Make:
+
 ```bash
+git clone https://github.com/KambojRajan/ship.git
+cd ship
+make install
+```
+
+Available Make commands:
+- `make build` - Build the binary to `bin/ship`
+- `make install` - Build and install to system PATH
+- `make uninstall` - Remove from system PATH
+- `make test` - Run tests
+- `make clean` - Remove build artifacts
+- `make help` - Show all available commands
+
+#### Option 3: Manual Installation
+
+```bash
+git clone https://github.com/KambojRajan/ship.git
+cd ship
 go build -o ship
+sudo mv ship /usr/local/bin/
 ```
 
-3. (Optional) AddIndex to your PATH for system-wide access:
+#### Option 4: Download Pre-built Binary
+
+Download the latest release for your platform from the [Releases page](https://github.com/KambojRajan/ship/releases).
+
+### Verify Installation
+
+After installation, verify that Ship is working:
+
 ```bash
-# For macOS/Linux
-sudo mv ship /usr/local/bin/
+ship --version
+ship --help
 ```
 
 ## 📝 Usage
@@ -146,6 +190,90 @@ The test suite includes:
 - **Assertion helpers**: Custom assertions for test validation
 
 ## 🛠️ Development
+
+### Setting Up for Development
+
+1. Clone the repository:
+```bash
+git clone https://github.com/KambojRajan/ship.git
+cd ship
+```
+
+2. Install dependencies:
+```bash
+make deps
+```
+
+3. Build for development:
+```bash
+make build
+```
+
+### Development Workflow
+
+#### Running Tests
+```bash
+# Run all tests
+make test
+
+# Run tests with coverage
+make test-cover
+
+# Run specific test
+go test ./tests/command_tests/add_test.go -v
+```
+
+#### Building and Running
+```bash
+# Build and run (development mode)
+make dev
+
+# Just run without building
+make run
+
+# Build to bin/ directory
+make build
+```
+
+#### Code Quality
+```bash
+# Format code
+make fmt
+
+# Run go vet
+make vet
+
+# Run all linting checks
+make lint
+
+# Tidy dependencies
+make tidy
+```
+
+#### Quick Development Cycle
+```bash
+# Build, install, and test your changes
+make build && make test
+
+# Clean and rebuild
+make clean && make build
+```
+
+### Creating a Release
+
+1. Tag your release:
+```bash
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+2. GitHub Actions will automatically:
+   - Run tests
+   - Build binaries for multiple platforms (Linux, macOS, Windows)
+   - Create a GitHub release with downloadable assets
+   - Generate checksums
+
+### Project Structure
 
 ### Project Structure
 

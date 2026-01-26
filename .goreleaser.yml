@@ -1,0 +1,118 @@
+# GoReleaser configuration for Ship
+# This enables automated releases with pre-built binaries for multiple platforms
+
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./tests/...
+
+builds:
+  - id: ship
+    main: ./main.go
+    binary: ship
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - 386
+    ignore:
+      - goos: darwin
+        goarch: 386
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.BuildTime={{.Date}}
+      - -X main.Commit={{.Commit}}
+
+archives:
+  - id: ship-archive
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE*
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - Merge pull request
+      - Merge branch
+
+release:
+  github:
+    owner: KambojRajan
+    name: ship
+  draft: false
+  prerelease: auto
+  name_template: "Release {{.Version}}"
+  header: |
+    ## 🚢 Ship {{.Version}}
+    
+    ### What's New
+
+  footer: |
+    ### Installation
+    
+    #### Homebrew (macOS/Linux)
+    ```bash
+    brew tap KambojRajan/ship
+    brew install ship
+    ```
+    
+    #### Direct Download
+    Download the appropriate binary for your platform from the assets below.
+    
+    #### From Source
+    ```bash
+    git clone https://github.com/KambojRajan/ship.git
+    cd ship
+    ./install.sh
+    ```
+
+brews:
+  - repository:
+      owner: KambojRajan
+      name: homebrew-ship
+    folder: Formula
+    homepage: https://github.com/KambojRajan/ship
+    description: "A lightweight, Git-inspired version control system written in Go"
+    license: MIT
+    test: |
+      system "#{bin}/ship --version"
+    install: |
+      bin.install "ship"
+
+nfpms:
+  - id: ship-packages
+    package_name: ship
+    homepage: https://github.com/KambojRajan/ship
+    maintainer: Rajan Kamboj <your-email@example.com>
+    description: A lightweight, Git-inspired version control system written in Go
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/local/bin
