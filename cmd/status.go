@@ -19,7 +19,8 @@ var statusCmd = &cobra.Command{
 			var err error
 			path, err = os.Getwd()
 			if err != nil {
-				panic(err)
+				cmd.PrintErr(err)
+				return
 			}
 		}
 		commands.Status(path)

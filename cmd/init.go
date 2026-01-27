@@ -11,7 +11,7 @@ var initCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := commands.Init(".")
 		if err != nil {
-			return
+			cmd.PrintErr(err)
 		}
 	},
 }

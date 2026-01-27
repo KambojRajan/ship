@@ -231,7 +231,7 @@ func TestYourCommand(t *testing.T) {
 
 ### Adding a New Entity
 
-1. Create entity in `core/Entities/`
+1. Create entity in `core/entities/`
 2. Implement required methods
 3. Add serialization/deserialization
 4. Write unit tests

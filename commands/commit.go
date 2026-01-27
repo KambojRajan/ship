@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	entities "github.com/KambojRajan/ship/core/Entities"
+	"github.com/KambojRajan/ship/core/entities"
 	"github.com/KambojRajan/ship/core/utils"
 )
 

@@ -16,7 +16,7 @@ var CommitCmd = &cobra.Command{
 		path, _ := os.Getwd()
 		err := commands.Commit(message, path)
 		if err != nil {
-			panic(err)
+			cmd.PrintErr(err)
 		}
 	},
 }
