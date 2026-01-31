@@ -3,6 +3,8 @@ package helpers
 import (
 	"os"
 	"testing"
+
+	"github.com/KambojRajan/ship/core/utils"
 )
 
 type SetupInfo struct {
@@ -34,4 +36,8 @@ func BurnDown(t *testing.T) {
 			return
 		}
 	})
+	err = os.RemoveAll(utils.RootShipDir)
+	if err != nil {
+		return
+	}
 }

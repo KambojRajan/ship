@@ -27,9 +27,9 @@ func AssertNil(err error) {
 	}
 }
 
-func AssertNotNil(err error) {
-	if err == nil {
-		panic(err)
+func AssertNotNil(val any) {
+	if val == nil {
+		panic(val)
 	}
 }
 
