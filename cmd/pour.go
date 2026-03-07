@@ -3,7 +3,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/KambojRajan/ship/core/entities"
+	entities "github.com/KambojRajan/ship/core/Entities"
 	"github.com/spf13/cobra"
 )
 
