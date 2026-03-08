@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/KambojRajan/ship/core/entities"
+	entities "github.com/KambojRajan/ship/core/Entities"
 )
 
 func AssertExists(t *testing.T, path string) {
