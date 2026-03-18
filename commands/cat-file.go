@@ -34,7 +34,7 @@ func CatFile(hash, flag string) (string, error) {
 	defer func(zr io.ReadCloser) {
 		err := zr.Close()
 		if err != nil {
-			_ = fmt.Errorf(err.Error())
+			_ = err
 		}
 	}(zr)
 

@@ -12,6 +12,9 @@ func Pour(path string) error {
 	if err != nil {
 		return err
 	}
+	if repoBasePath == "" {
+		return fmt.Errorf("not a ship repository (or any of the parent directories)")
+	}
 
 	commits, err := entities.LoadCommits(repoBasePath)
 	if err != nil {
@@ -24,9 +27,7 @@ func Pour(path string) error {
 	}
 
 	for _, commit := range commits {
-		// Print commit hash (first 7 chars like git)
-		// For now we'll just print the full commit details since we only load HEAD
-		fmt.Printf("commit %s\n", getCommitHash(repoBasePath, commit))
+		fmt.Printf("commit %s\n", commit.Hash)
 		fmt.Printf("Author: %s <%s> %d %s\n", commit.Author.Name, commit.Author.Email, commit.Author.Timestamp.Unix(), commit.Author.Timestamp.Format("-0700"))
 		fmt.Printf("Committer: %s <%s> %d %s\n", commit.Committer.Name, commit.Committer.Email, commit.Committer.Timestamp.Unix(), commit.Committer.Timestamp.Format("-0700"))
 
@@ -39,13 +40,3 @@ func Pour(path string) error {
 
 	return nil
 }
-
-// getCommitHash retrieves the current HEAD commit hash
-func getCommitHash(repoPath string, commit *entities.Commit) string {
-	head, err := entities.ResolveHead(repoPath)
-	if err != nil {
-		return "unknown"
-	}
-	return head.Hash
-}
-

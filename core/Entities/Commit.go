@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/KambojRajan/ship/core/common"
@@ -15,6 +16,7 @@ import (
 )
 
 type Commit struct {
+	Hash         string
 	TreeHash     string
 	ParentHashes []string
 	Author       User
@@ -286,57 +288,107 @@ func getMainRef(repoPath string) (string, error) {
 		return "", err
 	}
 
-	ref := string(headBytes)
+	ref := strings.TrimSpace(string(headBytes))
 	log.Printf("[getMainRef] Successfully retrieved ref: %s", ref)
 	return ref, nil
 }
 
-func LoadCommits(path string) ([]*Commit, error) {
-	log.Printf("[LoadCommits] Starting to load commits from path: %s", path)
+func loadCommitByHash(repoBasePath, hash string) (*Commit, error) {
+	hash = strings.TrimSpace(hash)
+	if hash == "" {
+		return nil, nil
+	}
+	if len(hash) < 3 {
+		return nil, fmt.Errorf("invalid commit hash: %s", hash)
+	}
 
-	hash, err := getMainRef(path)
+	folder := hash[:2]
+	file := hash[2:]
+	log.Printf("[loadCommitByHash] Loading commit %s from %s/%s", hash, folder, file)
+
+	hashPath := filepath.Join(repoBasePath, ".ship", "objects", folder, file)
+	data, err := os.ReadFile(hashPath)
 	if err != nil {
-		log.Printf("[LoadCommits] ERROR: Failed to get main ref: %v", err)
+		log.Printf("[loadCommitByHash] ERROR: Failed to read object file: %v", err)
 		return nil, err
 	}
-	log.Printf("[LoadCommits] Got commit hash: %s", hash)
+
+	object, err := inflateGitObject(data)
+	if err != nil {
+		log.Printf("[loadCommitByHash] ERROR: Failed to inflate object: %v", err)
+		return nil, err
+	}
+
+	commit, err := parseCommit(object)
+	if err != nil {
+		log.Printf("[loadCommitByHash] ERROR: Failed to parse commit: %v", err)
+		return nil, err
+	}
+
+	commit.Hash = hash
+	commit.repoPath = repoBasePath
+	return commit, nil
+}
+
+func LoadCommits(path string) ([]*Commit, error) {
+	log.Printf("[LoadCommits] Starting to load commits from path: %s", path)
 
 	repoBasePath, err := utils.ShipHasBeenInitRecursive(path)
 	if err != nil {
 		log.Printf("[LoadCommits] ERROR: Failed to find repo base path: %v", err)
 		return nil, err
 	}
+	if repoBasePath == "" {
+		return nil, fmt.Errorf("not a ship repository (or any of the parent directories)")
+	}
 	log.Printf("[LoadCommits] Repo base path: %s", repoBasePath)
 
-	folder := hash[:2]
-	file := hash[2:]
-	log.Printf("[LoadCommits] Object folder: %s, file: %s", folder, file)
-
-	hashPath := filepath.Join(repoBasePath, ".ship", "objects", folder, file)
-	log.Printf("[LoadCommits] Reading object from: %s", hashPath)
-
-	data, err := os.ReadFile(hashPath)
+	head, err := ResolveHead(repoBasePath)
 	if err != nil {
-		log.Printf("[LoadCommits] ERROR: Failed to read object file: %v", err)
+		log.Printf("[LoadCommits] ERROR: Failed to resolve HEAD: %v", err)
 		return nil, err
 	}
-	log.Printf("[LoadCommits] Read %d bytes from object file", len(data))
 
-	object, err := inflateGitObject(data)
-	if err != nil {
-		log.Printf("[LoadCommits] ERROR: Failed to inflate object: %v", err)
-		return nil, err
+	hash := strings.TrimSpace(head.Hash)
+	if hash == "" {
+		log.Printf("[LoadCommits] No commits found on HEAD")
+		return []*Commit{}, nil
 	}
-	log.Printf("[LoadCommits] Inflated object to %d bytes", len(object))
+	log.Printf("[LoadCommits] Got commit hash: %s", hash)
 
-	commit, err := parseCommit(object)
-	if err != nil {
-		log.Printf("[LoadCommits] ERROR: Failed to parse commit: %v", err)
-		return nil, err
+	commits := make([]*Commit, 0)
+	stack := []string{hash}
+	visited := make(map[string]bool)
+
+	for len(stack) > 0 {
+		currentHash := strings.TrimSpace(stack[len(stack)-1])
+		stack = stack[:len(stack)-1]
+
+		if currentHash == "" || visited[currentHash] {
+			continue
+		}
+
+		commit, err := loadCommitByHash(repoBasePath, currentHash)
+		if err != nil {
+			log.Printf("[LoadCommits] ERROR: Failed to load commit %s: %v", currentHash, err)
+			return nil, err
+		}
+		if commit == nil {
+			continue
+		}
+
+		visited[currentHash] = true
+		commits = append(commits, commit)
+
+		for i := len(commit.ParentHashes) - 1; i >= 0; i-- {
+			parentHash := strings.TrimSpace(commit.ParentHashes[i])
+			if parentHash == "" || visited[parentHash] {
+				continue
+			}
+			stack = append(stack, parentHash)
+		}
 	}
-	log.Printf("[LoadCommits] Successfully parsed commit")
 
-	commits := []*Commit{commit}
 	log.Printf("[LoadCommits] Returning %d commit(s)", len(commits))
 	return commits, nil
 }

@@ -60,6 +60,44 @@ func TestAddTwice_ToInitDir_ShouldPass(t *testing.T) {
 	helpers.BurnDown(t)
 }
 
+func TestAdd_WithSeparateInvocations_ShouldPreserveExistingIndexEntries(t *testing.T) {
+	info := helpers.Setup(t)
+
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	files := []string{"a.txt", "b.txt", "c.txt", "d.txt"}
+	for _, name := range files {
+		helpers.WriteFile(t, info.RepoDir, name, []byte("content for "+name))
+	}
+
+	originalDir, err := os.Getwd()
+	helpers.AssertNil(err)
+	err = os.Chdir(info.RepoDir)
+	helpers.AssertNil(err)
+	defer func() {
+		err := os.Chdir(originalDir)
+		if err != nil {
+			return
+		}
+	}()
+
+	err = commands.Add("a.txt", "b.txt", "c.txt")
+	helpers.AssertNil(err)
+	err = commands.Add("d.txt")
+	helpers.AssertNil(err)
+
+	index, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+	helpers.AssertEqual(t, 4, len(index.Entries))
+
+	for _, name := range files {
+		helpers.AssertFileInIndex(t, info.RepoDir, name)
+	}
+
+	helpers.BurnDown(t)
+}
+
 func TestAdd_ToUninitializedDir_ShouldFail(t *testing.T) {
 	info := helpers.Setup(t)
 
@@ -233,6 +271,35 @@ func TestAdd_WithDeletedFile_ShouldHandle(t *testing.T) {
 	index, err := entities.LoadIndex(info.RepoDir)
 	helpers.AssertNil(err)
 	_, exists := index.Entries["file1.txt"]
+	helpers.AssertEqual(t, false, exists)
+
+	helpers.BurnDown(t)
+}
+
+func TestAdd_WithScopedRefresh_ShouldRemoveDeletedFilesOnlyWithinTarget(t *testing.T) {
+	info := helpers.Setup(t)
+
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.WriteFile(t, info.RepoDir, "keep.txt", []byte("keep"))
+	helpers.WriteFile(t, info.RepoDir, "dir/remove.txt", []byte("remove"))
+	helpers.WriteFile(t, info.RepoDir, "dir/keep.txt", []byte("keep in dir"))
+
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.DeleteFile(t, info.RepoDir, "dir/remove.txt")
+	err = commands.Add(info.RepoDir + "/dir")
+	helpers.AssertNil(err)
+
+	index, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.AssertEqual(t, 2, len(index.Entries))
+	helpers.AssertFileInIndex(t, info.RepoDir, "keep.txt")
+	helpers.AssertFileInIndex(t, info.RepoDir, "dir/keep.txt")
+	_, exists := index.Entries["dir/remove.txt"]
 	helpers.AssertEqual(t, false, exists)
 
 	helpers.BurnDown(t)
