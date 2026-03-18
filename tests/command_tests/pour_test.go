@@ -34,6 +34,29 @@ func captureStdout(t *testing.T, fn func() error) (string, error) {
 	return string(output), callErr
 }
 
+func captureStderr(t *testing.T, fn func() error) (string, error) {
+	t.Helper()
+
+	originalStderr := os.Stderr
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create stderr pipe: %v", err)
+	}
+
+	os.Stderr = writer
+	callErr := fn()
+	_ = writer.Close()
+	os.Stderr = originalStderr
+
+	output, readErr := io.ReadAll(reader)
+	_ = reader.Close()
+	if readErr != nil {
+		t.Fatalf("failed to read stderr: %v", readErr)
+	}
+
+	return string(output), callErr
+}
+
 func TestPour_OnEmptyRepository_ShouldPrintNoCommitsFound(t *testing.T) {
 	info := helpers.Setup(t)
 
@@ -115,6 +138,14 @@ func TestPour_ShouldLoadAndPrintCommitHistory(t *testing.T) {
 	}
 	if strings.Index(output, "commit "+secondHash) > strings.Index(output, "commit "+firstHash) {
 		t.Fatalf("expected newer commit %s to appear before parent %s, got: %q", secondHash, firstHash, output)
+	}
+
+	stderrOutput, err := captureStderr(t, func() error {
+		return commands.Pour(dir)
+	})
+	helpers.AssertNil(err)
+	if strings.TrimSpace(stderrOutput) != "" {
+		t.Fatalf("expected pour to produce no stderr output, got: %q", stderrOutput)
 	}
 
 	helpers.BurnDown(t)

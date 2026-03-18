@@ -138,45 +138,33 @@ func (c *Commit) CommitTree(treeHash string, parentHashes []string, author User,
 }
 
 func inflateGitObject(data []byte) ([]byte, error) {
-	log.Printf("[inflateGitObject] Starting inflation of %d bytes", len(data))
 
 	r, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {
-		log.Printf("[inflateGitObject] ERROR: Failed to create zlib reader: %v", err)
 		return nil, err
 	}
 	defer func(r io.ReadCloser) {
-		err := r.Close()
-		if err != nil {
-			log.Printf("[inflateGitObject] ERROR: Failed to close zlib reader: %v", err)
-		}
+		r.Close()
 	}(r)
 
 	result, err := io.ReadAll(r)
 	if err != nil {
-		log.Printf("[inflateGitObject] ERROR: Failed to read inflated data: %v", err)
 		return nil, err
 	}
 
-	log.Printf("[inflateGitObject] Successfully inflated to %d bytes", len(result))
 	return result, nil
 }
 
 func parseCommit(data []byte) (*Commit, error) {
-	log.Printf("[parseCommit] Starting to parse commit data (%d bytes)", len(data))
 
 	nullIndex := bytes.IndexByte(data, 0)
 	if nullIndex == -1 {
-		log.Println("[parseCommit] ERROR: No null byte found in commit object")
 		return nil, fmt.Errorf("invalid commit object: no null byte found")
 	}
-	log.Printf("[parseCommit] Found null byte at index %d", nullIndex)
 
 	content := data[nullIndex+1:]
-	log.Printf("[parseCommit] Content size after header: %d bytes", len(content))
 
 	lines := bytes.Split(content, []byte{utils.NEWLINE})
-	log.Printf("[parseCommit] Split content into %d lines", len(lines))
 
 	commit := &Commit{
 		ParentHashes: []string{},
@@ -185,86 +173,66 @@ func parseCommit(data []byte) (*Commit, error) {
 	var messageStartIndex int
 	for i, line := range lines {
 		if len(line) == 0 {
-			log.Printf("[parseCommit] Found empty line at index %d (message starts next)", i)
 			messageStartIndex = i + 1
 			break
 		}
 
 		parts := bytes.SplitN(line, []byte{' '}, 2)
 		if len(parts) < 2 {
-			log.Printf("[parseCommit] Skipping line %d (insufficient parts): %s", i, string(line))
 			continue
 		}
 
 		key := string(parts[0])
 		value := string(parts[1])
-		log.Printf("[parseCommit] Line %d: key=%s, value=%s", i, key, value)
 
 		switch key {
 		case utils.TREE:
 			commit.TreeHash = value
-			log.Printf("[parseCommit] Set tree hash: %s", value)
 		case utils.PARENT:
 			commit.ParentHashes = append(commit.ParentHashes, value)
-			log.Printf("[parseCommit] Added parent hash: %s (total: %d)", value, len(commit.ParentHashes))
 		case utils.AUTHOR:
 			user, err := parseUser(value)
 			if err != nil {
-				log.Printf("[parseCommit] ERROR: Failed to parse author: %v", err)
 				return nil, fmt.Errorf("failed to parse author: %w", err)
 			}
 			commit.Author = user
-			log.Printf("[parseCommit] Set author: %s <%s>", user.Name, user.Email)
 		case utils.COMMITTER:
 			user, err := parseUser(value)
 			if err != nil {
-				log.Printf("[parseCommit] ERROR: Failed to parse committer: %v", err)
 				return nil, fmt.Errorf("failed to parse committer: %w", err)
 			}
 			commit.Committer = user
-			log.Printf("[parseCommit] Set committer: %s <%s>", user.Name, user.Email)
 		}
 	}
 
 	if messageStartIndex < len(lines) {
 		commit.Message = string(bytes.Join(lines[messageStartIndex:], []byte{utils.NEWLINE}))
-		log.Printf("[parseCommit] Parsed message (%d chars): %s", len(commit.Message), commit.Message)
-	} else {
-		log.Println("[parseCommit] No message found in commit")
 	}
 
-	log.Println("[parseCommit] Successfully parsed commit")
 	return commit, nil
 }
 
 func parseUser(line string) (User, error) {
-	log.Printf("[parseUser] Parsing user from line: %s", line)
 
 	emailStart := bytes.IndexByte([]byte(line), '<')
 	emailEnd := bytes.IndexByte([]byte(line), '>')
 
 	if emailStart == -1 || emailEnd == -1 {
-		log.Printf("[parseUser] ERROR: Invalid user format, missing email delimiters")
 		return User{}, fmt.Errorf("invalid user format: %s", line)
 	}
 
 	name := string(bytes.TrimSpace([]byte(line[:emailStart])))
 	email := line[emailStart+1 : emailEnd]
-	log.Printf("[parseUser] Parsed name: %s, email: %s", name, email)
 
 	remaining := string(bytes.TrimSpace([]byte(line[emailEnd+1:])))
-	log.Printf("[parseUser] Remaining timestamp info: %s", remaining)
 
 	var timestamp int64
 	var timezone string
 
 	_, err := fmt.Sscanf(remaining, "%d %s", &timestamp, &timezone)
 	if err != nil {
-		log.Printf("[parseUser] ERROR: Failed to parse timestamp: %v", err)
 		return User{}, fmt.Errorf("failed to parse timestamp: %w", err)
 	}
-
-	log.Printf("[parseUser] Parsed timestamp: %d, timezone: %s", timestamp, timezone)
 
 	user := User{
 		Name:      name,
@@ -272,24 +240,18 @@ func parseUser(line string) (User, error) {
 		Timestamp: time.Unix(timestamp, 0),
 	}
 
-	log.Printf("[parseUser] Successfully parsed user: %s <%s> at %v", user.Name, user.Email, user.Timestamp)
 	return user, nil
 }
 
 func getMainRef(repoPath string) (string, error) {
-	log.Printf("[getMainRef] Getting main ref from repo path: %s", repoPath)
-
 	headPath := filepath.Join(repoPath, utils.RootShipDir, utils.MainHeadPath)
-	log.Printf("[getMainRef] Reading HEAD from: %s", headPath)
 
 	headBytes, err := os.ReadFile(headPath)
 	if err != nil {
-		log.Printf("[getMainRef] ERROR: Failed to read HEAD file: %v", err)
 		return "", err
 	}
 
 	ref := strings.TrimSpace(string(headBytes))
-	log.Printf("[getMainRef] Successfully retrieved ref: %s", ref)
 	return ref, nil
 }
 
@@ -304,24 +266,20 @@ func loadCommitByHash(repoBasePath, hash string) (*Commit, error) {
 
 	folder := hash[:2]
 	file := hash[2:]
-	log.Printf("[loadCommitByHash] Loading commit %s from %s/%s", hash, folder, file)
 
 	hashPath := filepath.Join(repoBasePath, ".ship", "objects", folder, file)
 	data, err := os.ReadFile(hashPath)
 	if err != nil {
-		log.Printf("[loadCommitByHash] ERROR: Failed to read object file: %v", err)
 		return nil, err
 	}
 
 	object, err := inflateGitObject(data)
 	if err != nil {
-		log.Printf("[loadCommitByHash] ERROR: Failed to inflate object: %v", err)
 		return nil, err
 	}
 
 	commit, err := parseCommit(object)
 	if err != nil {
-		log.Printf("[loadCommitByHash] ERROR: Failed to parse commit: %v", err)
 		return nil, err
 	}
 
@@ -331,30 +289,24 @@ func loadCommitByHash(repoBasePath, hash string) (*Commit, error) {
 }
 
 func LoadCommits(path string) ([]*Commit, error) {
-	log.Printf("[LoadCommits] Starting to load commits from path: %s", path)
 
 	repoBasePath, err := utils.ShipHasBeenInitRecursive(path)
 	if err != nil {
-		log.Printf("[LoadCommits] ERROR: Failed to find repo base path: %v", err)
 		return nil, err
 	}
 	if repoBasePath == "" {
 		return nil, fmt.Errorf("not a ship repository (or any of the parent directories)")
 	}
-	log.Printf("[LoadCommits] Repo base path: %s", repoBasePath)
 
 	head, err := ResolveHead(repoBasePath)
 	if err != nil {
-		log.Printf("[LoadCommits] ERROR: Failed to resolve HEAD: %v", err)
 		return nil, err
 	}
 
 	hash := strings.TrimSpace(head.Hash)
 	if hash == "" {
-		log.Printf("[LoadCommits] No commits found on HEAD")
 		return []*Commit{}, nil
 	}
-	log.Printf("[LoadCommits] Got commit hash: %s", hash)
 
 	commits := make([]*Commit, 0)
 	stack := []string{hash}
@@ -370,7 +322,6 @@ func LoadCommits(path string) ([]*Commit, error) {
 
 		commit, err := loadCommitByHash(repoBasePath, currentHash)
 		if err != nil {
-			log.Printf("[LoadCommits] ERROR: Failed to load commit %s: %v", currentHash, err)
 			return nil, err
 		}
 		if commit == nil {
@@ -389,6 +340,5 @@ func LoadCommits(path string) ([]*Commit, error) {
 		}
 	}
 
-	log.Printf("[LoadCommits] Returning %d commit(s)", len(commits))
 	return commits, nil
 }

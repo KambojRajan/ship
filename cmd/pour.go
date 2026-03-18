@@ -12,7 +12,8 @@ var PourCmd = &cobra.Command{
 	Short: "Display the commit history",
 	Run: func(cmd *cobra.Command, args []string) {
 		path, _ := os.Getwd()
-		err := commands.Pour(path)
+		oneline, _ := cmd.Flags().GetBool("oneline")
+		err := commands.Pour(path, oneline)
 		if err != nil {
 			cmd.PrintErr(err)
 		}
@@ -20,6 +21,6 @@ var PourCmd = &cobra.Command{
 }
 
 func init() {
+	PourCmd.Flags().Bool("oneline", false, "Show each commit on a single line")
 	rootCmd.AddCommand(PourCmd)
 }
-
