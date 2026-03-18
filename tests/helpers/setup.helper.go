@@ -3,8 +3,6 @@ package helpers
 import (
 	"os"
 	"testing"
-
-	"github.com/KambojRajan/ship/core/utils"
 )
 
 type SetupInfo struct {
@@ -26,7 +24,13 @@ func Setup(t *testing.T) *SetupInfo {
 }
 
 func BurnDown(t *testing.T) {
-	err := os.RemoveAll(t.TempDir())
+	// Ensure we're in a safe directory before cleaning up
+	homeDir, err := os.UserHomeDir()
+	if err == nil {
+		os.Chdir(homeDir)
+	}
+
+	err = os.RemoveAll(t.TempDir())
 	if err != nil {
 		return
 	}
@@ -36,8 +40,4 @@ func BurnDown(t *testing.T) {
 			return
 		}
 	})
-	err = os.RemoveAll(utils.RootShipDir)
-	if err != nil {
-		return
-	}
 }

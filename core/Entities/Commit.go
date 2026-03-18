@@ -20,9 +20,10 @@ type Commit struct {
 	Author       User
 	Committer    User
 	Message      string
+	repoPath     string
 }
 
-func NewCommit(treeHash string, parentHashes []string, author User, committer User, message string) *Commit {
+func NewCommit(treeHash string, parentHashes []string, author User, committer User, message string, repoPath string) *Commit {
 	log.Printf("[NewCommit] Creating new commit with treeHash: %s", treeHash)
 	log.Printf("[NewCommit] Parent hashes count: %d", len(parentHashes))
 	log.Printf("[NewCommit] Author: %s <%s>", author.Name, author.Email)
@@ -35,12 +36,32 @@ func NewCommit(treeHash string, parentHashes []string, author User, committer Us
 		Author:       author,
 		Committer:    committer,
 		Message:      message,
+		repoPath:     repoPath,
 	}
 }
 
 func (c *Commit) Commit() (string, error) {
 	log.Println("[Commit] Starting commit operation")
 	log.Printf("[Commit] Tree hash: %s", c.TreeHash)
+
+	// Change to repo directory to write objects with correct paths
+	oldCwd, err := os.Getwd()
+	if err != nil {
+		log.Printf("[Commit] ERROR: Failed to get current directory: %v", err)
+		return "", err
+	}
+
+	if c.repoPath != "" {
+		if err := os.Chdir(c.repoPath); err != nil {
+			log.Printf("[Commit] ERROR: Failed to change directory to %s: %v", c.repoPath, err)
+			return "", err
+		}
+		defer func() {
+			if err := os.Chdir(oldCwd); err != nil {
+				log.Printf("[Commit] ERROR: Failed to restore directory: %v", err)
+			}
+		}()
+	}
 
 	content := c.serialize()
 	log.Printf("[Commit] Serialized content size: %d bytes", len(content))
@@ -103,7 +124,7 @@ func (c *Commit) CommitTree(treeHash string, parentHashes []string, author User,
 		committer.Timestamp = author.Timestamp
 	}
 
-	commit := NewCommit(treeHash, parentHashes, author, committer, message)
+	commit := NewCommit(treeHash, parentHashes, author, committer, message, c.repoPath)
 	hash, err := commit.Commit()
 	if err != nil {
 		log.Printf("[CommitTree] ERROR: Failed to commit: %v", err)
@@ -256,7 +277,7 @@ func parseUser(line string) (User, error) {
 func getMainRef(repoPath string) (string, error) {
 	log.Printf("[getMainRef] Getting main ref from repo path: %s", repoPath)
 
-	headPath := filepath.Join(repoPath, utils.MainHeadPath)
+	headPath := filepath.Join(repoPath, utils.RootShipDir, utils.MainHeadPath)
 	log.Printf("[getMainRef] Reading HEAD from: %s", headPath)
 
 	headBytes, err := os.ReadFile(headPath)
@@ -291,7 +312,7 @@ func LoadCommits(path string) ([]*Commit, error) {
 	file := hash[2:]
 	log.Printf("[LoadCommits] Object folder: %s, file: %s", folder, file)
 
-	hashPath := filepath.Join(repoBasePath, utils.RootObjectDir, folder, file)
+	hashPath := filepath.Join(repoBasePath, ".ship", "objects", folder, file)
 	log.Printf("[LoadCommits] Reading object from: %s", hashPath)
 
 	data, err := os.ReadFile(hashPath)

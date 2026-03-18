@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/KambojRajan/ship/commands"
-	entities "github.com/KambojRajan/ship/core/Entities"
+	"github.com/KambojRajan/ship/core/entities"
 	"github.com/KambojRajan/ship/tests/helpers"
 )
 
@@ -31,7 +31,7 @@ func TestCommit_NewCommit_ShouldCreateValidCommit(t *testing.T) {
 	}
 	message := "Initial commit"
 
-	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message, "")
 
 	helpers.AssertEqual(t, commit.TreeHash, treeHash)
 	helpers.AssertEqual(t, len(commit.ParentHashes), 0)
@@ -65,7 +65,8 @@ func TestCommit_WithNoParents_ShouldPass(t *testing.T) {
 	}
 	message := "Initial commit"
 
-	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+
+	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message, info.RepoDir)
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
@@ -100,7 +101,7 @@ func TestCommit_WithSingleParent_ShouldPass(t *testing.T) {
 	}
 	message := "Second commit"
 
-	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message, info.RepoDir)
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
@@ -137,7 +138,7 @@ func TestCommit_WithMultipleParents_ShouldPass(t *testing.T) {
 	}
 	message := "Merge commit"
 
-	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message, info.RepoDir)
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
@@ -172,7 +173,7 @@ func TestCommit_WithEmptyMessage_ShouldPass(t *testing.T) {
 	}
 	message := ""
 
-	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message, info.RepoDir)
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
@@ -207,7 +208,7 @@ func TestCommit_WithLongMessage_ShouldPass(t *testing.T) {
 	}
 	message := "First line of commit message\n\nDetailed explanation of what changed.\nMultiple lines are supported.\n\n- Feature 1\n- Feature 2"
 
-	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message, info.RepoDir)
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
@@ -242,7 +243,7 @@ func TestCommit_WithDifferentAuthorAndCommitter_ShouldPass(t *testing.T) {
 	}
 	message := "Commit with different author and committer"
 
-	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message, info.RepoDir)
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
@@ -279,11 +280,11 @@ func TestCommit_SameInputProducesSameHash_ShouldPass(t *testing.T) {
 	}
 	message := "Test commit"
 
-	commit1 := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+	commit1 := entities.NewCommit(treeHash, parentHashes, author, committer, message, info.RepoDir)
 	hash1, err := commit1.Commit()
 	helpers.AssertNil(err)
 
-	commit2 := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+	commit2 := entities.NewCommit(treeHash, parentHashes, author, committer, message, info.RepoDir)
 	hash2, err := commit2.Commit()
 	helpers.AssertNil(err)
 
@@ -314,11 +315,11 @@ func TestCommit_DifferentInputProducesDifferentHash_ShouldPass(t *testing.T) {
 		Timestamp: time.Unix(1234567890, 0).UTC(),
 	}
 
-	commit1 := entities.NewCommit(treeHash, parentHashes, author, committer, "First message")
+	commit1 := entities.NewCommit(treeHash, parentHashes, author, committer, "First message", info.RepoDir)
 	hash1, err := commit1.Commit()
 	helpers.AssertNil(err)
 
-	commit2 := entities.NewCommit(treeHash, parentHashes, author, committer, "Second message")
+	commit2 := entities.NewCommit(treeHash, parentHashes, author, committer, "Second message", info.RepoDir)
 	hash2, err := commit2.Commit()
 	helpers.AssertNil(err)
 
@@ -387,7 +388,7 @@ func TestCommit_WithValidTreeHash_ShouldStoreObject(t *testing.T) {
 	}
 	message := "Commit with valid tree hash"
 
-	commit := entities.NewCommit(treeHash, []string{}, author, committer, message)
+	commit := entities.NewCommit(treeHash, []string{}, author, committer, message, info.RepoDir)
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
@@ -428,7 +429,7 @@ func TestCommit_WithSpecialCharactersInMessage_ShouldPass(t *testing.T) {
 	}
 	message := "Commit with special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?`~\n\t"
 
-	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message, info.RepoDir)
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
@@ -463,7 +464,7 @@ func TestCommit_WithUnicodeInMessage_ShouldPass(t *testing.T) {
 	}
 	message := "Commit with unicode: 你好世界 🚀 émojis"
 
-	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message, info.RepoDir)
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)
@@ -477,6 +478,8 @@ func TestCommit_WithUnicodeInMessage_ShouldPass(t *testing.T) {
 
 func TestCommit_WithoutInitializedRepo_ShouldCreateObject(t *testing.T) {
 	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
 
 	oldDir, _ := os.Getwd()
 	defer func() { _ = os.Chdir(oldDir) }()
@@ -496,7 +499,7 @@ func TestCommit_WithoutInitializedRepo_ShouldCreateObject(t *testing.T) {
 	}
 	message := "Commit without init"
 
-	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message)
+	commit := entities.NewCommit(treeHash, parentHashes, author, committer, message, info.RepoDir)
 	commitHash, err := commit.Commit()
 
 	helpers.AssertNil(err)

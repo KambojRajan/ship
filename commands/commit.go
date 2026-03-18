@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	entities "github.com/KambojRajan/ship/core/Entities"
+	"github.com/KambojRajan/ship/core/entities"
 	"github.com/KambojRajan/ship/core/utils"
 )
 
@@ -34,7 +34,7 @@ func Commit(message string, path string) error {
 	author := entities.NewUserFromEnv(false)
 	committer := entities.NewUserFromEnv(true)
 
-	commit := entities.NewCommit(treeHash, parents, author, committer, message)
+	commit := entities.NewCommit(treeHash, parents, author, committer, message, repoBasePath)
 	commitHash, err := commit.Commit()
 	if err != nil {
 		return err

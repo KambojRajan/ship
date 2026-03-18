@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	entities "github.com/KambojRajan/ship/core/Entities"
+	"github.com/KambojRajan/ship/core/entities"
 	"github.com/KambojRajan/ship/core/common"
 	"github.com/KambojRajan/ship/core/utils"
 )
@@ -25,6 +25,18 @@ func Add(paths ...string) error {
 	if err != nil {
 		return fmt.Errorf("error resolving repository path: %w", err)
 	}
+
+	// Change to repo directory to ensure HashObject writes to correct .ship location
+	oldCwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("error getting current directory: %w", err)
+	}
+	if err := os.Chdir(repoBasePath); err != nil {
+		return fmt.Errorf("error changing to repository directory: %w", err)
+	}
+	defer func() {
+		os.Chdir(oldCwd)
+	}()
 
 	index, err := entities.LoadIndex(repoBasePath)
 	if err != nil {

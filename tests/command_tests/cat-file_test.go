@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/KambojRajan/ship/commands"
-	entities "github.com/KambojRajan/ship/core/Entities"
+	"github.com/KambojRajan/ship/core/entities"
 	"github.com/KambojRajan/ship/tests/helpers"
 )
 
