@@ -37,30 +37,46 @@ func HashObject(data []byte, objectType common.ObjectType, write bool) (string, 
 	objectPath := filepath.Join(objectDir, file)
 
 	if _, err := os.Stat(objectPath); err == nil {
-		return hash, err
+		return hash, nil
 	}
-	out, err := os.Create(objectPath)
+
+	tempFile, err := os.CreateTemp(objectDir, file+".tmp-*")
 	if err != nil {
 		return hash, err
 	}
-	defer func(out *os.File) {
-		err := out.Close()
-		if err != nil {
-
+	tempPath := tempFile.Name()
+	cleanupTemp := true
+	defer func() {
+		if cleanupTemp {
+			_ = os.Remove(tempPath)
 		}
-	}(out)
+	}()
 
-	zw := zlib.NewWriter(out)
-	defer func(zw *zlib.Writer) {
-		err := zw.Close()
-		if err != nil {
-			panic(err)
-		}
-	}(zw)
+	zw := zlib.NewWriter(tempFile)
 
 	if _, err := zw.Write(store.Bytes()); err != nil {
+		_ = zw.Close()
+		_ = tempFile.Close()
 		return hash, err
 	}
+
+	if err := zw.Close(); err != nil {
+		_ = tempFile.Close()
+		return hash, err
+	}
+
+	if err := tempFile.Close(); err != nil {
+		return hash, err
+	}
+
+	if err := os.Rename(tempPath, objectPath); err != nil {
+		if _, statErr := os.Stat(objectPath); statErr == nil {
+			return hash, nil
+		}
+		return hash, err
+	}
+
+	cleanupTemp = false
 
 	return hash, nil
 }
