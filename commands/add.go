@@ -103,11 +103,17 @@ func processPath(baseRepoPath, givenPath string, index *entities.Index, existing
 		}
 		relPath = filepath.Clean(relPath)
 
+		var previousMode *uint32
+		if existing, ok := index.Entries[relPath]; ok {
+			mode := existing.Mode
+			previousMode = &mode
+		}
+
 		existingFiles[relPath] = true
 		index.AddIndex(common.IndexEntry{
 			Path: relPath,
 			Hash: hash,
-			Mode: utils.GetMode(info),
+			Mode: utils.GetMode(info, previousMode),
 		})
 
 		return nil

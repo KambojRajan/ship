@@ -2,10 +2,12 @@ package command_tests
 
 import (
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/KambojRajan/ship/commands"
 	"github.com/KambojRajan/ship/core/entities"
+	"github.com/KambojRajan/ship/core/utils"
 	"github.com/KambojRajan/ship/tests/helpers"
 )
 
@@ -387,7 +389,62 @@ func TestAdd_WithRegularFileMode_ShouldPass(t *testing.T) {
 
 	helpers.AssertFileInIndex(t, info.RepoDir, "regular.txt")
 	helpers.AssertNil(err)
-	helpers.AssertEqual(t, uint32(100644), index.Entries["regular.txt"].Mode)
+	helpers.AssertEqual(t, utils.GitFileModeRegular, index.Entries["regular.txt"].Mode)
+
+	helpers.BurnDown(t)
+}
+
+func TestAdd_WithExecutableFileOnUnix_ShouldTrackExecutableMode(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("unix executable bit detection is not reliable on windows")
+	}
+
+	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.WriteFile(t, info.RepoDir, "script.sh", []byte("#!/bin/sh\necho hi\n"))
+	err = os.Chmod(info.RepoDir+"/script.sh", 0o755)
+	helpers.AssertNil(err)
+
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	index, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+	helpers.AssertEqual(t, utils.GitFileModeExecutable, index.Entries["script.sh"].Mode)
+
+	helpers.BurnDown(t)
+}
+
+func TestAdd_OnWindows_ShouldPreserveExistingExecutableMode(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("windows-specific executable mode preservation test")
+	}
+
+	info := helpers.Setup(t)
+	err := commands.Init(info.RepoDir)
+	helpers.AssertNil(err)
+
+	helpers.WriteFile(t, info.RepoDir, "tool.cmd", []byte("@echo off\r\necho hi\r\n"))
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	index, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+
+	entry := index.Entries["tool.cmd"]
+	entry.Mode = utils.GitFileModeExecutable
+	index.Entries["tool.cmd"] = entry
+	err = index.Save(info.RepoDir)
+	helpers.AssertNil(err)
+
+	err = commands.Add(info.RepoDir)
+	helpers.AssertNil(err)
+
+	updatedIndex, err := entities.LoadIndex(info.RepoDir)
+	helpers.AssertNil(err)
+	helpers.AssertEqual(t, utils.GitFileModeExecutable, updatedIndex.Entries["tool.cmd"].Mode)
 
 	helpers.BurnDown(t)
 }

@@ -46,3 +46,9 @@ const (
 	Staged   = "staged"
 	Unstaged = "unstaged"
 )
+
+
+const (
+	GitFileModeRegular    uint32 = 0o100644
+	GitFileModeExecutable uint32 = 0o100755
+)

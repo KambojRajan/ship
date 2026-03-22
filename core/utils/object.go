@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/KambojRajan/ship/core/common"
 )
@@ -95,10 +96,18 @@ func ObjectExists(hash string, baseRepoPath string) bool {
 	return err == nil
 }
 
-func GetMode(info os.FileInfo) uint32 {
-	var mode uint32 = 100644
-	if info.Mode()&0111 != 0 {
-		mode = 100755
+func IsExecutableMode(mode uint32) bool {
+	return mode == GitFileModeExecutable
+}
+
+func GetMode(info os.FileInfo, previousMode *uint32) uint32 {
+	if info.Mode()&0o111 != 0 {
+		return GitFileModeExecutable
 	}
-	return mode
+
+	if runtime.GOOS == "windows" && previousMode != nil && IsExecutableMode(*previousMode) {
+		return GitFileModeExecutable
+	}
+
+	return GitFileModeRegular
 }

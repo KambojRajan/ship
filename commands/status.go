@@ -29,7 +29,7 @@ func Status(currentDir string) {
 		return
 	}
 
-	newIndex, err := recalculateIndex(repoBasePath)
+	newIndex, err := recalculateIndex(repoBasePath, index)
 	if err != nil {
 		return
 	}
@@ -54,7 +54,7 @@ func Status(currentDir string) {
 	}
 }
 
-func recalculateIndex(repoRoot string) (*entities.Index, error) {
+func recalculateIndex(repoRoot string, previous *entities.Index) (*entities.Index, error) {
 	index := entities.NewIndex()
 
 	err := filepath.WalkDir(repoRoot, func(path string, d fs.DirEntry, err error) error {
@@ -89,11 +89,20 @@ func recalculateIndex(repoRoot string) (*entities.Index, error) {
 		if err != nil {
 			return err
 		}
+		relPath = filepath.Clean(relPath)
+
+		var previousMode *uint32
+		if previous != nil {
+			if existing, ok := previous.Entries[relPath]; ok {
+				mode := existing.Mode
+				previousMode = &mode
+			}
+		}
 
 		index.AddIndex(common.IndexEntry{
 			Path: relPath,
 			Hash: hash,
-			Mode: utils.GetMode(info),
+			Mode: utils.GetMode(info, previousMode),
 		})
 
 		return nil
