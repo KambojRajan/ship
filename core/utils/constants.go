@@ -47,8 +47,9 @@ const (
 	Unstaged = "unstaged"
 )
 
-
 const (
 	GitFileModeRegular    uint32 = 0o100644
 	GitFileModeExecutable uint32 = 0o100755
 )
+
+var RunPurgeCommands = []string{"commit", "add"}
