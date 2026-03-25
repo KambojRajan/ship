@@ -2,7 +2,6 @@ package entities
 
 import (
 	"bytes"
-	"log"
 	"sort"
 	"strings"
 
@@ -51,7 +50,6 @@ func writeTreeRecursive(root *common.TempDirNode) (string, error) {
 }
 
 func serializeTree(root *common.TempDirNode) []byte {
-	log.Println("[serializeTree] Starting tree serialization")
 	var entries []Node
 
 	for name, files := range root.Files {
@@ -75,7 +73,6 @@ func serializeTree(root *common.TempDirNode) []byte {
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].Name < entries[j].Name
 	})
-	log.Println("[serializeTree] Entries sorted alphabetically")
 
 	var buffer bytes.Buffer
 
@@ -90,14 +87,12 @@ func serializeTree(root *common.TempDirNode) []byte {
 }
 
 func buildTempDirTree(index *Index) *common.TempDirNode {
-	log.Println("[buildTempDirTree] Building temporary directory tree from index")
 	root := &common.TempDirNode{
 		Dirs:  make(map[string]*common.TempDirNode),
 		Files: make(map[string]common.IndexEntry),
 	}
 
-	if index.Entries == nil || len(index.Entries) == 0 {
-		log.Println("[buildTempDirTree] Index is empty, returning empty tree")
+	if len(index.Entries) == 0 {
 		return root
 	}
 
@@ -109,7 +104,6 @@ func buildTempDirTree(index *Index) *common.TempDirNode {
 		for i := 0; i < len(pathParts)-1; i++ {
 			dirName := pathParts[i]
 			if curr.Dirs[dirName] == nil {
-
 				curr.Dirs[dirName] = &common.TempDirNode{
 					Dirs:  make(map[string]*common.TempDirNode),
 					Files: make(map[string]common.IndexEntry),
@@ -117,11 +111,11 @@ func buildTempDirTree(index *Index) *common.TempDirNode {
 			}
 			curr = curr.Dirs[dirName]
 		}
+
 		filename := pathParts[len(pathParts)-1]
 
 		curr.Files[filename] = entry
 	}
 
-	log.Println("[buildTempDirTree] Temporary directory tree build complete")
 	return root
 }

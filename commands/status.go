@@ -8,32 +8,46 @@ import (
 
 	"github.com/KambojRajan/ship/core/entities"
 	"github.com/KambojRajan/ship/core/common"
+	"github.com/KambojRajan/ship/core/trace"
 	"github.com/KambojRajan/ship/core/utils"
 )
 
 func Status(currentDir string) {
+	end := trace.Step("ShipHasBeenInitRecursive")
 	repoBasePath, err := utils.ShipHasBeenInitRecursive(currentDir)
+	end(err)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
+	end = trace.Step("EvalSymlinks(repo)")
 	repoBasePath, err = filepath.EvalSymlinks(repoBasePath)
+	end(err)
 	if err != nil {
 		fmt.Printf("error resolving repository path: %v\n", err)
 		return
 	}
 
+	end = trace.Step("LoadIndex")
 	index, err := entities.LoadIndex(repoBasePath)
+	end(err)
 	if err != nil {
 		return
 	}
 
+	end = trace.Step("recalculateIndex")
 	newIndex, err := recalculateIndex(repoBasePath, index)
+	end(err)
 	if err != nil {
 		return
 	}
 
+	// Workload context — visible in trace summary
+	trace.Meta("tracked_files", fmt.Sprintf("%d", len(index.Entries)))
+	trace.Meta("disk_files", fmt.Sprintf("%d", len(newIndex.Entries)))
+
+	end = trace.Step("compareEntries")
 	for path, indexEntry := range index.Entries {
 		newIndexEntry, exists := newIndex.Entries[path]
 		if !exists {
@@ -52,11 +66,13 @@ func Status(currentDir string) {
 			fmt.Println(colorPath(path, utils.Unstaged, false))
 		}
 	}
+	end(nil)
 }
 
 func recalculateIndex(repoRoot string, previous *entities.Index) (*entities.Index, error) {
 	index := entities.NewIndex()
 
+	end := trace.Step("WalkDir(repo)")
 	err := filepath.WalkDir(repoRoot, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -107,6 +123,7 @@ func recalculateIndex(repoRoot string, previous *entities.Index) (*entities.Inde
 
 		return nil
 	})
+	end(err)
 
 	return index, err
 }

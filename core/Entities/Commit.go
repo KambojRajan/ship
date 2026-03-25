@@ -5,7 +5,6 @@ import (
 	"compress/zlib"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,11 +25,6 @@ type Commit struct {
 }
 
 func NewCommit(treeHash string, parentHashes []string, author User, committer User, message string, repoPath string) *Commit {
-	log.Printf("[NewCommit] Creating new commit with treeHash: %s", treeHash)
-	log.Printf("[NewCommit] Parent hashes count: %d", len(parentHashes))
-	log.Printf("[NewCommit] Author: %s <%s>", author.Name, author.Email)
-	log.Printf("[NewCommit] Committer: %s <%s>", committer.Name, committer.Email)
-	log.Printf("[NewCommit] Message: %s", message)
 
 	return &Commit{
 		TreeHash:     treeHash,
@@ -43,97 +37,73 @@ func NewCommit(treeHash string, parentHashes []string, author User, committer Us
 }
 
 func (c *Commit) Commit() (string, error) {
-	log.Println("[Commit] Starting commit operation")
-	log.Printf("[Commit] Tree hash: %s", c.TreeHash)
 
-	// Change to repo directory to write objects with correct paths
 	oldCwd, err := os.Getwd()
 	if err != nil {
-		log.Printf("[Commit] ERROR: Failed to get current directory: %v", err)
 		return "", err
 	}
 
 	if c.repoPath != "" {
 		if err := os.Chdir(c.repoPath); err != nil {
-			log.Printf("[Commit] ERROR: Failed to change directory to %s: %v", c.repoPath, err)
 			return "", err
 		}
 		defer func() {
-			if err := os.Chdir(oldCwd); err != nil {
-				log.Printf("[Commit] ERROR: Failed to restore directory: %v", err)
-			}
+			os.Chdir(oldCwd)
 		}()
 	}
 
 	content := c.serialize()
-	log.Printf("[Commit] Serialized content size: %d bytes", len(content))
 
 	hash, err := utils.HashObject(content, common.COMMIT, true)
 	if err != nil {
-		log.Printf("[Commit] ERROR: Failed to hash object: %v", err)
 		return "", err
 	}
 
-	log.Printf("[Commit] Successfully created commit with hash: %s", hash)
 	return hash, nil
 }
 
 func (c *Commit) serialize() []byte {
-	log.Println("[serialize] Starting commit serialization")
+
 	var buffer bytes.Buffer
 
 	buffer.WriteString(fmt.Sprintf("%s ", utils.TREE))
 	buffer.WriteString(c.TreeHash)
 	buffer.WriteByte(utils.NEWLINE)
-	log.Printf("[serialize] Added tree hash: %s", c.TreeHash)
 
-	for i, parentHash := range c.ParentHashes {
+	for _, parentHash := range c.ParentHashes {
 		buffer.WriteString(fmt.Sprintf("%s ", utils.PARENT))
 		buffer.WriteString(parentHash)
 		buffer.WriteByte(utils.NEWLINE)
-		log.Printf("[serialize] Added parent hash #%d: %s", i+1, parentHash)
 	}
 
 	buffer.WriteString(fmt.Sprintf("%s ", utils.AUTHOR))
 	buffer.WriteString(c.Author.String())
 	buffer.WriteByte(utils.NEWLINE)
-	log.Printf("[serialize] Added author: %s", c.Author.String())
 
 	buffer.WriteString(fmt.Sprintf("%s ", utils.COMMITTER))
 	buffer.WriteString(c.Committer.String())
 	buffer.WriteByte(utils.NEWLINE)
-	log.Printf("[serialize] Added committer: %s", c.Committer.String())
 
 	buffer.WriteByte(utils.NEWLINE)
 
 	buffer.WriteString(c.Message)
-	log.Printf("[serialize] Added message: %s", c.Message)
-	log.Printf("[serialize] Total serialized size: %d bytes", buffer.Len())
 
 	return buffer.Bytes()
 }
 
 func (c *Commit) CommitTree(treeHash string, parentHashes []string, author User, message string) (string, error) {
-	log.Println("[CommitTree] Starting commit tree operation")
-	log.Printf("[CommitTree] Tree hash: %s", treeHash)
-	log.Printf("[CommitTree] Parent hashes count: %d", len(parentHashes))
-	log.Printf("[CommitTree] Author: %s <%s>", author.Name, author.Email)
-	log.Printf("[CommitTree] Message: %s", message)
 
 	committer := c.Committer
 	if committer.Timestamp.IsZero() {
-		log.Println("[CommitTree] Committer timestamp is zero, using author timestamp")
 		committer.Timestamp = author.Timestamp
 	}
 
 	commit := NewCommit(treeHash, parentHashes, author, committer, message, c.repoPath)
 	hash, err := commit.Commit()
 	if err != nil {
-		log.Printf("[CommitTree] ERROR: Failed to commit: %v", err)
 		return "", err
 	}
 
-	log.Printf("[CommitTree] Successfully created commit tree with hash: %s", hash)
 	return hash, nil
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/KambojRajan/ship/core/common"
 	"github.com/KambojRajan/ship/core/entities"
+	"github.com/KambojRajan/ship/core/trace"
 	"github.com/KambojRajan/ship/core/utils"
 )
 
@@ -19,7 +20,9 @@ type addTarget struct {
 }
 
 func Add(paths ...string) error {
+	end := trace.Step("ShipHasBeenInitRecursive")
 	repoBasePath, err := utils.ShipHasBeenInitRecursive(paths...)
+	end(err)
 	if err != nil {
 		return err
 	}
@@ -28,43 +31,62 @@ func Add(paths ...string) error {
 		return fmt.Errorf("not a ship repository (or any of the parent directories)")
 	}
 
+	end = trace.Step("EvalSymlinks(repo)")
 	repoBasePath, err = filepath.EvalSymlinks(repoBasePath)
+	end(err)
 	if err != nil {
 		return fmt.Errorf("error resolving repository path: %w", err)
 	}
 
 	// Change to repo directory to ensure HashObject writes to correct .ship location
+	end = trace.Step("Getwd")
 	oldCwd, err := os.Getwd()
+	end(err)
 	if err != nil {
 		return fmt.Errorf("error getting current directory: %w", err)
 	}
+	end = trace.Step("Chdir(repo)")
 	if err := os.Chdir(repoBasePath); err != nil {
+		end(err)
 		return fmt.Errorf("error changing to repository directory: %w", err)
 	}
+	end(nil)
 	defer func() {
 		os.Chdir(oldCwd)
 	}()
 
+	end = trace.Step("LoadIndex")
 	index, err := entities.LoadIndex(repoBasePath)
+	end(err)
 	if err != nil {
 		return err
 	}
 
+	end = trace.Step("getRepoRelativePath")
 	targets, err := getRepoRelativePath(repoBasePath, paths...)
+	end(err)
 	if err != nil {
 		return err
 	}
 
 	existingFiles := make(map[string]bool)
 
+	end = trace.Step("processTargets")
 	for _, target := range targets {
 		if err := processPath(repoBasePath, target.absPath, index, existingFiles); err != nil {
+			end(err)
 			return err
 		}
 	}
+	end(nil)
+
+	// Workload context — visible in trace summary
+	trace.Meta("files_staged", fmt.Sprintf("%d", len(existingFiles)))
+	trace.Meta("targets_resolved", fmt.Sprintf("%d", len(targets)))
 
 	cleanupIndexEntries(index, existingFiles, targets)
 
+	end = trace.Step("SaveIndex")
 	return index.Save(repoBasePath)
 }
 
