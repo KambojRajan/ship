@@ -64,7 +64,7 @@ func TestPour_OnEmptyRepository_ShouldPrintNoCommitsFound(t *testing.T) {
 	helpers.AssertNil(err)
 
 	output, err := captureStdout(t, func() error {
-		return commands.Pour(info.RepoDir)
+		return commands.Pour(info.RepoDir, false)
 	})
 	helpers.AssertNil(err)
 
@@ -120,7 +120,7 @@ func TestPour_ShouldLoadAndPrintCommitHistory(t *testing.T) {
 	helpers.AssertEqual(t, firstHash, commits[0].ParentHashes[0])
 
 	output, err := captureStdout(t, func() error {
-		return commands.Pour(dir)
+		return commands.Pour(dir, false)
 	})
 	helpers.AssertNil(err)
 
@@ -141,7 +141,7 @@ func TestPour_ShouldLoadAndPrintCommitHistory(t *testing.T) {
 	}
 
 	stderrOutput, err := captureStderr(t, func() error {
-		return commands.Pour(dir)
+		return commands.Pour(dir, false)
 	})
 	helpers.AssertNil(err)
 	if strings.TrimSpace(stderrOutput) != "" {
