@@ -87,7 +87,9 @@ func Add(paths ...string) error {
 	cleanupIndexEntries(index, existingFiles, targets)
 
 	end = trace.Step("SaveIndex")
-	return index.Save(repoBasePath)
+	err = index.Save(repoBasePath)
+	end(err)
+	return err
 }
 
 func processPath(baseRepoPath, givenPath string, index *entities.Index, existingFiles map[string]bool) error {
