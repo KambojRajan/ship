@@ -8,6 +8,7 @@ package trace
 import (
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 )
@@ -115,19 +116,9 @@ func (p *PrettySink) Emit(e Event) {
 	}
 
 	p.steps = append(p.steps, stepRecord{e.Name, e.Duration, e.Err})
-
-	status := "\033[32m✓\033[0m"
-	if e.Err != nil {
-		status = "\033[31m✗\033[0m"
-	}
-	fmt.Fprintf(p.w, "  %s  %-36s  %s\n",
-		status,
-		e.Name,
-		formatDuration(e.Duration),
-	)
 }
 
-// PrintSummary prints a footer with total duration and any recorded metadata.
+// PrintSummary prints all steps with a relative time bar and a footer summary.
 func (p *PrettySink) PrintSummary() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -141,20 +132,49 @@ func (p *PrettySink) PrintSummary() {
 		}
 	}
 
+	const barWidth = 18
+	for _, s := range p.steps {
+		status := "\033[32m✓\033[0m"
+		if s.err != nil {
+			status = "\033[31m✗\033[0m"
+		}
+
+		var bar string
+		var pct float64
+		if total > 0 {
+			frac := float64(s.dur) / float64(total)
+			pct = frac * 100
+			filled := int(frac*barWidth + 0.5)
+			if filled > barWidth {
+				filled = barWidth
+			}
+			bar = "\033[36m" + strings.Repeat("█", filled) + "\033[90m" + strings.Repeat("░", barWidth-filled) + "\033[0m"
+		} else {
+			bar = "\033[90m" + strings.Repeat("░", barWidth) + "\033[0m"
+		}
+
+		fmt.Fprintf(p.w, "  %s  %-36s  %8s  %s  \033[90m%3.0f%%\033[0m\n",
+			status, s.name, formatDuration(s.dur), bar, pct)
+	}
+
 	fmt.Fprintf(p.w, "\n  \033[90m%d steps · %s", len(p.steps), formatDuration(total))
 	if errors > 0 {
 		fmt.Fprintf(p.w, " · \033[31m%d error(s)\033[90m", errors)
 	}
+	fmt.Fprintln(p.w, "\033[0m")
+
 	if len(p.metas) > 0 {
-		fmt.Fprintf(p.w, " · ")
+		fmt.Fprint(p.w, "  \033[90m")
 		for i, m := range p.metas {
+			m = strings.TrimPrefix(m, "meta:")
 			if i > 0 {
-				fmt.Fprint(p.w, ", ")
+				fmt.Fprint(p.w, "  ")
 			}
 			fmt.Fprint(p.w, m)
 		}
+		fmt.Fprintln(p.w, "\033[0m")
 	}
-	fmt.Fprintln(p.w, "\033[0m\n")
+	fmt.Fprintln(p.w)
 }
 
 func formatDuration(d time.Duration) string {
