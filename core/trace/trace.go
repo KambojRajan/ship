@@ -1,8 +1,3 @@
-// Package trace provides lightweight step-level tracing for Ship commands.
-//
-// A global Sink (default: no-op) receives an Event each time a named step
-// completes. cmd/trace.go swaps in a real Sink via SetSink before running a
-// command, then restores the no-op when done.
 package trace
 
 import (
@@ -13,7 +8,6 @@ import (
 	"time"
 )
 
-// ANSI color codes used by PrettySink.
 const (
 	colorReset = "\033[0m"
 	colorGreen = "\033[32m"
@@ -22,19 +16,15 @@ const (
 	colorGray  = "\033[90m"
 )
 
-// Event is emitted by a pipeline step when it completes.
 type Event struct {
 	Name     string
 	Duration time.Duration
 	Err      error
 }
 
-// Sink receives trace events.
 type Sink interface {
 	Emit(Event)
 }
-
-// ---- global sink --------------------------------------------------------
 
 var (
 	mu      sync.Mutex
@@ -45,8 +35,6 @@ type noopSink struct{}
 
 func (noopSink) Emit(Event) {}
 
-// SetSink replaces the active sink and returns a function that restores the
-// previous one. Call it with defer in trace-aware callers.
 func SetSink(s Sink) func() {
 	mu.Lock()
 	prev := current
@@ -59,7 +47,6 @@ func SetSink(s Sink) func() {
 	}
 }
 
-// activeSink returns the current sink under the lock.
 func activeSink() Sink {
 	mu.Lock()
 	s := current
@@ -67,15 +54,6 @@ func activeSink() Sink {
 	return s
 }
 
-// ---- step helpers -------------------------------------------------------
-
-// Step records the start time of a named pipeline step and returns a
-// completion function. Call the completion function with the step's final
-// error (nil on success) to emit the event.
-//
-//	end := trace.Step("LoadIndex")
-//	index, err := entities.LoadIndex(path)
-//	end(err)
 func Step(name string) func(error) {
 	start := time.Now()
 	return func(err error) {
@@ -87,16 +65,10 @@ func Step(name string) func(error) {
 	}
 }
 
-// Meta records a key/value annotation as a zero-duration event.
-// It is used to attach context (e.g. file counts) to a trace.
 func Meta(key, value string) {
 	activeSink().Emit(Event{Name: fmt.Sprintf("meta:%s=%s", key, value)})
 }
 
-// ---- PrettySink ---------------------------------------------------------
-
-// PrettySink accumulates step events and renders a coloured summary table
-// when PrintSummary is called.
 type PrettySink struct {
 	mu    sync.Mutex
 	w     io.Writer
@@ -125,7 +97,6 @@ func (p *PrettySink) Emit(e Event) {
 	p.steps = append(p.steps, stepRecord{e.Name, e.Duration, e.Err})
 }
 
-// PrintSummary prints all steps with a relative time bar and a footer summary.
 func (p *PrettySink) PrintSummary() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -168,7 +139,6 @@ func (p *PrettySink) PrintSummary() {
 	fmt.Fprintln(p.w)
 }
 
-// totals returns the sum of all step durations and the number of failed steps.
 func (p *PrettySink) totals() (total time.Duration, errCount int) {
 	for _, s := range p.steps {
 		total += s.dur
@@ -179,8 +149,6 @@ func (p *PrettySink) totals() (total time.Duration, errCount int) {
 	return
 }
 
-// buildBar renders a coloured progress bar of the given width for frac ∈ [0,1].
-// It returns the bar string and the percentage value.
 func buildBar(frac float64, width int) (bar string, pct float64) {
 	pct = frac * 100
 	filled := int(frac*float64(width) + 0.5)
