@@ -49,7 +49,6 @@ EXAMPLES
 
 		var sink coretrace.Sink
 		var pretty *coretrace.PrettySink
-		var otelEnd func()
 
 		switch {
 		case traceOtel:
@@ -67,13 +66,8 @@ EXAMPLES
 			}
 			defer func() { _ = shutdown(context.Background()) }()
 
-			var otelSink *coretrace.OTelSink
-			otelSink, otelEnd = coretrace.NewOTelSink(context.Background(), tp, operation)
-			defer func() {
-				if otelEnd != nil {
-					otelEnd()
-				}
-			}()
+			otelSink, endSpan := coretrace.NewOTelSink(context.Background(), tp, operation)
+			defer endSpan()
 			sink = otelSink
 
 		case traceFormat == "json":
@@ -95,8 +89,7 @@ EXAMPLES
 		restore := coretrace.SetSink(sink)
 		defer restore()
 
-		var runErr error
-		runErr = tracecmd.Dispatch(operation, &tracecmd.ExecContext{
+		runErr := tracecmd.Dispatch(operation, &tracecmd.ExecContext{
 			RepoBasePath: repoBasePath,
 			Args:         rest,
 		})

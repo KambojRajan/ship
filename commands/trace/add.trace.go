@@ -21,7 +21,3 @@ func (AddStrategy) ValidateArgs(args []string) error {
 func (AddStrategy) Execute(ctx *ExecContext) error {
 	return commands.Add(ctx.Args...)
 }
-
-func TraceAdd(paths ...string) error {
-	return commands.Add(paths...)
-}

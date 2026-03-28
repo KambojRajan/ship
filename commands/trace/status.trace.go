@@ -17,7 +17,3 @@ func (StatusStrategy) Execute(ctx *ExecContext) error {
 	commands.Status(path)
 	return nil
 }
-
-func TraceStatus(currentDir string) {
-	commands.Status(currentDir)
-}
