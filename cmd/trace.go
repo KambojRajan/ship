@@ -8,6 +8,7 @@ import (
 
 	tracecmd "github.com/KambojRajan/ship/commands/trace"
 	coretrace "github.com/KambojRajan/ship/core/trace"
+	"github.com/KambojRajan/ship/core/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -19,28 +20,8 @@ var (
 
 var TraceCmd = &cobra.Command{
 	Use:   "trace <command> [args...]",
-	Short: "Trace internal execution of a ship command",
-	Long: `Trace records and prints every internal pipeline step for the given command.
-
-SUPPORTED COMMANDS
-  commit <message>          trace the commit pipeline
-  add    <path> [paths...]  trace the staging pipeline
-  status [path]             trace the status pipeline
-
-OUTPUT FORMATS
-  --format text   (default) human-readable colour output + summary footer
-  --format json   NDJSON – one JSON object per step; pipe to jq for filtering
-
-OPENTELEMETRY
-  --otel                    export spans to an OTel-compatible JSON file
-  --otel-output <file>      destination file (default: stderr)
-
-EXAMPLES
-  ship trace commit "feat: add auth"
-  ship trace add src/ README.md
-  ship trace status
-  ship trace commit "fix: bug" --format json | jq 'select(.status=="error")'
-  ship trace commit "feat: observability" --otel --otel-output spans.json`,
+	Short: utils.TRACE_SHORT,
+	Long:  utils.TRACE_LONG,
 
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
