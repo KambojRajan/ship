@@ -11,31 +11,45 @@ import (
 	"github.com/KambojRajan/ship/core/utils"
 )
 
+// Diff computes the diff and prints it to stdout.
 func Diff(path string, cached bool) error {
-	repoBasePath, err := utils.ShipHasBeenInitRecursive(path)
+	out, err := DiffString(path, cached)
 	if err != nil {
 		return err
 	}
+	fmt.Print(out)
+	return nil
+}
+
+// DiffString computes the diff and returns it as a string (no printing).
+// cached=false: working tree vs index. cached=true: index vs HEAD.
+func DiffString(path string, cached bool) (string, error) {
+	repoBasePath, err := utils.ShipHasBeenInitRecursive(path)
+	if err != nil {
+		return "", err
+	}
 	if repoBasePath == "" {
-		return fmt.Errorf("not a ship repository (or any of the parent directories)")
+		return "", fmt.Errorf("not a ship repository (or any of the parent directories)")
 	}
 
 	index, err := entities.LoadIndex(repoBasePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if cached {
-		return diffCached(repoBasePath, index)
+		return diffCachedString(repoBasePath, index)
 	}
-	return diffWorkingTree(repoBasePath, index)
+	return diffWorkingTreeString(repoBasePath, index)
 }
 
-func diffWorkingTree(repoBasePath string, index *entities.Index) error {
+func diffWorkingTreeString(repoBasePath string, index *entities.Index) (string, error) {
+	var sb strings.Builder
+
 	for filePath, entry := range index.Entries {
 		stagedBytes, err := utils.ReadObjectContent(repoBasePath, entry.Hash)
 		if err != nil {
-			return fmt.Errorf("read staged object for %s: %w", filePath, err)
+			return "", fmt.Errorf("read staged object for %s: %w", filePath, err)
 		}
 
 		absPath := filepath.Join(repoBasePath, filepath.FromSlash(filePath))
@@ -44,7 +58,7 @@ func diffWorkingTree(repoBasePath string, index *entities.Index) error {
 			if os.IsNotExist(err) {
 				workingBytes = []byte{}
 			} else {
-				return fmt.Errorf("read working tree file %s: %w", filePath, err)
+				return "", fmt.Errorf("read working tree file %s: %w", filePath, err)
 			}
 		}
 
@@ -53,23 +67,25 @@ func diffWorkingTree(repoBasePath string, index *entities.Index) error {
 			utils.SplitLines(string(workingBytes)),
 		)
 		if out := utils.FormatUnifiedDiff(filePath, filePath, diff, 3); out != "" {
-			fmt.Print(out)
+			sb.WriteString(out)
 		}
 	}
-	return nil
+	return sb.String(), nil
 }
 
-func diffCached(repoBasePath string, index *entities.Index) error {
+func diffCachedString(repoBasePath string, index *entities.Index) (string, error) {
+	var sb strings.Builder
+
 	head, err := entities.ResolveHead(repoBasePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	headFiles := map[string]string{}
 	if strings.TrimSpace(head.Hash) != "" {
 		headFiles, err = readCommitFiles(repoBasePath, strings.TrimSpace(head.Hash))
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
@@ -84,7 +100,7 @@ func diffCached(repoBasePath string, index *entities.Index) error {
 
 		stagedBytes, err := utils.ReadObjectContent(repoBasePath, entry.Hash)
 		if err != nil {
-			return fmt.Errorf("read staged object for %s: %w", filePath, err)
+			return "", fmt.Errorf("read staged object for %s: %w", filePath, err)
 		}
 
 		var oldLines []string
@@ -92,7 +108,7 @@ func diffCached(repoBasePath string, index *entities.Index) error {
 		if headHash, ok := headFiles[filePath]; ok {
 			headBytes, err := utils.ReadObjectContent(repoBasePath, headHash)
 			if err != nil {
-				return err
+				return "", err
 			}
 			oldLines = utils.SplitLines(string(headBytes))
 			oldPath = filePath
@@ -100,7 +116,7 @@ func diffCached(repoBasePath string, index *entities.Index) error {
 
 		diff := utils.DiffLines(oldLines, utils.SplitLines(string(stagedBytes)))
 		if out := utils.FormatUnifiedDiff(oldPath, filePath, diff, 3); out != "" {
-			fmt.Print(out)
+			sb.WriteString(out)
 		}
 	}
 
@@ -110,15 +126,15 @@ func diffCached(repoBasePath string, index *entities.Index) error {
 		}
 		headBytes, err := utils.ReadObjectContent(repoBasePath, headHash)
 		if err != nil {
-			return err
+			return "", err
 		}
 		diff := utils.DiffLines(utils.SplitLines(string(headBytes)), nil)
 		if out := utils.FormatUnifiedDiff(filePath, "/dev/null", diff, 3); out != "" {
-			fmt.Print(out)
+			sb.WriteString(out)
 		}
 	}
 
-	return nil
+	return sb.String(), nil
 }
 
 func readCommitFiles(repoBasePath, commitHash string) (map[string]string, error) {
