@@ -54,7 +54,7 @@ const (
 	GitFileModeExecutable uint32 = 0o100755
 )
 
-var RunPurgeCommands = []string{"commit", "add"}
+var RunPurgeCommands = []string{"commit", "add", "agent"}
 
 const (
 	TRACE_SHORT = "Trace internal execution of a ship command"
