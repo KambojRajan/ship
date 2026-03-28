@@ -11,10 +11,6 @@ import (
 	"github.com/KambojRajan/ship/core/utils"
 )
 
-// Diff prints a unified diff.
-//
-//   - cached=false → working tree vs index  (ship diff)
-//   - cached=true  → index vs HEAD          (ship diff --cached)
 func Diff(path string, cached bool) error {
 	repoBasePath, err := utils.ShipHasBeenInitRecursive(path)
 	if err != nil {
@@ -35,7 +31,6 @@ func Diff(path string, cached bool) error {
 	return diffWorkingTree(repoBasePath, index)
 }
 
-// diffWorkingTree compares each staged blob against the on-disk working tree.
 func diffWorkingTree(repoBasePath string, index *entities.Index) error {
 	for filePath, entry := range index.Entries {
 		stagedBytes, err := utils.ReadObjectContent(repoBasePath, entry.Hash)
@@ -64,7 +59,6 @@ func diffWorkingTree(repoBasePath string, index *entities.Index) error {
 	return nil
 }
 
-// diffCached compares each staged blob against the version in the HEAD commit.
 func diffCached(repoBasePath string, index *entities.Index) error {
 	head, err := entities.ResolveHead(repoBasePath)
 	if err != nil {
@@ -81,12 +75,11 @@ func diffCached(repoBasePath string, index *entities.Index) error {
 
 	seen := map[string]bool{}
 
-	// Files in the index: show insertions and modifications relative to HEAD.
 	for filePath, entry := range index.Entries {
 		seen[filePath] = true
 
 		if headHash, ok := headFiles[filePath]; ok && headHash == entry.Hash {
-			continue // identical — skip
+			continue
 		}
 
 		stagedBytes, err := utils.ReadObjectContent(repoBasePath, entry.Hash)
@@ -111,7 +104,6 @@ func diffCached(repoBasePath string, index *entities.Index) error {
 		}
 	}
 
-	// Files in HEAD but removed from the index: show as pure deletions.
 	for filePath, headHash := range headFiles {
 		if seen[filePath] {
 			continue
@@ -129,8 +121,6 @@ func diffCached(repoBasePath string, index *entities.Index) error {
 	return nil
 }
 
-// readCommitFiles resolves a commit hash to a flat map of path→blobHash by
-// reading the commit's tree object and recursing into subtrees.
 func readCommitFiles(repoBasePath, commitHash string) (map[string]string, error) {
 	commitContent, err := utils.ReadObjectContent(repoBasePath, commitHash)
 	if err != nil {
@@ -157,12 +147,6 @@ func readCommitFiles(repoBasePath, commitHash string) (map[string]string, error)
 	return files, nil
 }
 
-// readTreeRecursive parses a Ship tree object and populates files with
-// prefix/name → blobHash entries, recursing into sub-trees.
-//
-// Tree entry format written by serializeTree():
-//
-//	<octal-mode> <name>\0<40-char-hex-hash>
 func readTreeRecursive(repoBasePath, treeHash, prefix string, files map[string]string) error {
 	treeContent, err := utils.ReadObjectContent(repoBasePath, strings.TrimSpace(treeHash))
 	if err != nil {
@@ -171,7 +155,6 @@ func readTreeRecursive(repoBasePath, treeHash, prefix string, files map[string]s
 
 	data := treeContent
 	for len(data) > 0 {
-		// Parse mode (up to first space).
 		spaceIdx := bytes.IndexByte(data, ' ')
 		if spaceIdx < 0 {
 			break
@@ -179,7 +162,6 @@ func readTreeRecursive(repoBasePath, treeHash, prefix string, files map[string]s
 		mode := string(data[:spaceIdx])
 		data = data[spaceIdx+1:]
 
-		// Parse name (up to null byte).
 		nullIdx := bytes.IndexByte(data, 0)
 		if nullIdx < 0 {
 			break
@@ -187,7 +169,6 @@ func readTreeRecursive(repoBasePath, treeHash, prefix string, files map[string]s
 		name := string(data[:nullIdx])
 		data = data[nullIdx+1:]
 
-		// Parse 40-character hex hash.
 		if len(data) < 40 {
 			break
 		}
@@ -199,7 +180,6 @@ func readTreeRecursive(repoBasePath, treeHash, prefix string, files map[string]s
 			entryPath = prefix + "/" + name
 		}
 
-		// "40000" is the octal mode for a directory (fmt.Sprintf("%o", 040000)).
 		if mode == "40000" {
 			if err := readTreeRecursive(repoBasePath, hash, entryPath, files); err != nil {
 				return err

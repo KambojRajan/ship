@@ -72,14 +72,12 @@ func (cp *ConcurrentProcessor) GetResults() <-chan Result {
 	return cp.ResultChan
 }
 
-// Stop gracefully shuts down the processor
 func (cp *ConcurrentProcessor) Stop() {
 	close(cp.TaskChan)
 	cp.wg.Wait()
 	close(cp.ResultChan)
 }
 
-// Cancel immediately stops all workers
 func (cp *ConcurrentProcessor) Cancel() {
 	cp.cancelFun()
 	cp.wg.Wait()

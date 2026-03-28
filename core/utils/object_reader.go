@@ -10,8 +10,6 @@ import (
 	"strings"
 )
 
-// ReadObjectContent reads a stored object by hash (relative to repoBasePath)
-// and returns its raw content (header stripped).
 func ReadObjectContent(repoBasePath, hash string) ([]byte, error) {
 	hash = strings.TrimSpace(hash)
 	if len(hash) < 3 {
